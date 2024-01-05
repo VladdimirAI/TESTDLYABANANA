@@ -12,6 +12,13 @@ public final class PrivateConfig {
 
 
 
+    public static final String TESTNET_API_KEY = "7b0ec2bb8ef88dd7f8e6c3ab26e3ad53013658565a8d6d9bd16353bb1d130cb5";
+    public static final String TESTNET_SECRET_KEY = "da9b0ccee6681685e85cdf5ffc13e4e8a896165d7937ee60299a6f633dad8cb1"; // Unnecessary if TESTNET_PRIVATE_KEY_PATH is used
+    public static final String TESTNET_PRIVATE_KEY_PATH = ""; //Key must be PKCS#8 standard
+
+
+
+
 
     public static final String MONEY_FILE = "C:\\USDT пары .txt";
     public static final String TIMENG = "15m";
@@ -43,6 +50,10 @@ public final class PrivateConfig {
     public static final int PRIEMLEMUYPROCENTDOBOLINJERA = 15;
     public static final double OTSKOLKIRAZHVOSTDOLGHENBITBOLSHETRENDA = 0.8;
     public static final double DOSKOLKIRAZHVOSTDOLGHENBITBOLSHETRENDA = 2.5;
+
+    public static final double PERESTANOVKATPPROCENTDOBAVKIKSMA = 2.0;
+
+
 
 
 

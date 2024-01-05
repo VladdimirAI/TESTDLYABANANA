@@ -1,45 +1,104 @@
-2024-01-04 00:14:52.155[1704309292155] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=SELL&type=MARKET&quantity=309&timestamp=1704309292077&signature=f44ad0f8a1a85e1a70d1093eb4adbb8457a097eda3e9022808190bdc28ec0951
-2024-01-04 00:28:00.460[1704310080460] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=SELL&type=MARKET&quantity=309&timestamp=1704310080357&signature=3418f9dcfa01f360b3c898b07fabbcaa6d075a86dea58b25e691ae649082b3b6
-2024-01-04 00:47:16.903[1704311236903] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=SELL&type=MARKET&quantity=309&timestamp=1704311236831&signature=cf5a2f7bc9834f2e379105e4cb2e2a5d4eedfb1b6709ece8698e89a8b7ad3c0a
-2024-01-04 01:35:21.609[1704314121609] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/stream
-2024-01-04 01:35:23.474[1704314123474] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
-2024-01-04 02:21:03.028[1704316863028] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/stream
-2024-01-04 02:21:04.964[1704316864964] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
-2024-01-04 02:47:06.960[1704318426960] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/btcusdt@kline_1m
-2024-01-04 02:47:08.746[1704318428746] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
-2024-01-04 03:14:32.943[1704320072943] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/stream
-2024-01-04 03:14:34.802[1704320074802] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
-2024-01-04 04:45:32.328[1704325532328] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/stream
-2024-01-04 04:45:33.919[1704325533919] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
-2024-01-04 04:46:28.485[1704325588485] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/da9b0ccee6681685e85cdf5ffc13e4e8a896165d7937ee60299a6f633dad8cb1
-2024-01-04 04:46:30.094[1704325590094] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
-2024-01-04 05:08:04.278[1704326884278] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/iAlGXXBHhP7NiwKpgiNJ3zGEjmvIB006V9FrkrjkGbnKhTFpIhxCaPsNdaix4Ue3
-2024-01-04 05:08:05.988[1704326885988] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
-2024-01-04 05:39:00.794[1704328740794] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/iAlGXXBHhP7NiwKpgiNJ3zGEjmvIB006V9FrkrjkGbnKhTFpIhxCaPsNdaix4Ue3
-2024-01-04 05:39:02.573[1704328742573] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
-2024-01-04 05:41:49.062[1704328909062] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/iAlGXXBHhP7NiwKpgiNJ3zGEjmvIB006V9FrkrjkGbnKhTFpIhxCaPsNdaix4Ue3
-2024-01-04 05:41:50.637[1704328910637] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
-2024-01-04 06:27:12.615[1704331632615] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/1CpUT5rpX1XMnGIw898JPZPRN1ygLUINjWmRE3uNyzKgOq38M8oPhxQdwKd3pP24
-2024-01-04 06:27:14.426[1704331634426] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
-2024-01-04 06:44:17.632[1704332657632] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=SELL&type=MARKET&quantity=307&timestamp=1704332657576&signature=dec76774f91dd2f09d296affd3908d42e5eadd731c7ce4f811e320e1aa79ae27
-2024-01-04 07:18:24.780[1704334704780] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=LIMIT&timeInForce=GTC&quantity=308&price=0%2C22&timestamp=1704334704689&signature=4cc8f71e54b1458477e9f9479ea42c7737cb7185c3094d7a337f2296c912a978
-2024-01-04 07:18:51.657[1704334731657] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=LIMIT&timeInForce=GTC&quantity=308&price=0%2C22&timestamp=1704334731601&signature=a0a9585f6caee54c8226f4110a1add88afe4c9c9cad3b003124b1e9c13fd795e
-2024-01-04 07:20:58.475[1704334858475] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=LIMIT&timeInForce=GTC&quantity=308&price=0%2C22&timestamp=1704334858436&signature=d8d37c666db7fd99c65fcfebfbd713d695efe8a93505128beaf35a2aa53a9e24
-2024-01-04 07:21:20.040[1704334880040] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=LIMIT&timeInForce=GTC&quantity=308&price=0%2C22&timestamp=1704334880001&signature=83f18680c58730fa75af0386e1008482edb3c9b7b91b635d1f2221103fcfc064
-2024-01-04 07:21:36.305[1704334896305] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=LIMIT&timeInForce=GTC&quantity=308&price=0%2C22&timestamp=1704334896263&signature=95569d0953d45367f73dbbd932e0148fa6be1c909684e3c848f51c42e6148e68
-2024-01-04 07:21:58.453[1704334918453] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=LIMIT&timeInForce=GTC&quantity=308&price=0.22000&timestamp=1704334918407&signature=513b28f070737d801a279bcb64ec79c86e4812be99652c076c22de9f41aa7782
-2024-01-04 07:23:12.401[1704334992401] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=LIMIT&timeInForce=GTC&quantity=308&price=0.02200&timestamp=1704334992351&signature=3080e8b1e90b0434ddef90d13d18985a6c03cadbba3f8ed412c71e0a2d4409a3
-2024-01-04 07:23:46.890[1704335026890] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=LIMIT&timeInForce=GTC&quantity=308&price=0%2C021&timestamp=1704335026840&signature=3915d796961a258cb3b99e7e40eb69bf354679a84e31251e1ec3400b283f61dc
-2024-01-04 07:24:37.660[1704335077660] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=LIMIT&timeInForce=GTC&quantity=308&price=0.02100&timestamp=1704335077621&signature=d4f8838c9e9508e13e10f396b21fa17297dd8752e149366f029c06fa12fddff8
-2024-01-04 07:37:15.318[1704335835318] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=LIMIT&timeInForce=GTC&quantity=308&price=0.01900&timestamp=1704335835178&signature=2a6e8d880d4ad5c649dd08f1334e9b5b05340e0599ec7c33cf501ff5d6877d2e
-2024-01-04 07:37:57.512[1704335877512] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=LIMIT&timeInForce=GTC&quantity=308&price=0.02000&timestamp=1704335877466&signature=18de095810bdeb1191f56fb854cf4dbb35959fd3a97a9332aab8f02dfc7ef550
-2024-01-04 07:44:21.491[1704336261491] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=STOP_MARKET&timeInForce=GTC&quantity=308&price=0.02000&timestamp=1704336261450&signature=c24c661bbda54777f54ac9ebdb46e7344a9f0ae08f29ddcbfdfc8fbe9546d270
-2024-01-04 07:46:15.062[1704336375062] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=STOP_MARKET&timeInForce=GTC&quantity=308&stopPrice=0.02000&timestamp=1704336375019&signature=b5b5aac1523c6c00396afc7e25c2023fe62cc9e40b549f5e6ad13bdea57f41c5
-2024-01-04 07:51:34.201[1704336694201] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=LIMIT&timeInForce=GTC&quantity=308&price=0.019&timestamp=1704336694152&signature=bc66844eccdbf8fbe49ec0c5d550b3e1945689eb149f41b01f2150a5259cc531
-2024-01-04 20:33:49.806[1704382429806] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=SELL&type=MARKET&quantity=307&timestamp=1704382429762&signature=16cd354856e7f3727da4cd4b3929297a1f87d0be1d470d67dcd3f478cb2fdf76
-2024-01-04 20:34:56.645[1704382496645] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=MARKET&quantity=307&timestamp=1704382496603&signature=9c2877c9f269d13efb9ff8aa6c2f60f971d4536f6b11cc07d13f896efd5dbc09
-2024-01-04 20:39:34.195[1704382774195] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=LIMIT&timeInForce=GTC&quantity=309&price=0.019&timestamp=1704382774150&signature=a3a15e53d583f1899781fd1d614561a5df847566f453ac12a350d3f8dc6d2679
-2024-01-04 20:41:05.302[1704382865302] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - DELETE https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&orderId=946916635&timestamp=1704382865261&signature=fcb9ed3124e738998f86541a180fbc659a3400ce5bb6e3f0a8bd44991e489cd1
-2024-01-04 21:59:44.716[1704387584716] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - DELETE https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&orderId=946916635&timestamp=1704387584671&signature=5e78e1e4020e6746b22cab2a4766bd87d0103af67de49f90dd8f54fab9a3b3b3
-2024-01-04 22:13:33.805[1704388413805] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/pgXDllPZZfUszoo0yzerDKOjHFf4DUAOQNTGInEym4nnoK0rmI5axrtPSU2wEPYi
-2024-01-04 22:13:35.533[1704388415533] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 00:35:47.646[1704396947646] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/pgXDllPZZfUszoo0yzerDKOjHFf4DUAOQNTGInEym4nnoK0rmI5axrtPSU2wEPYi
+2024-01-05 00:35:49.272[1704396949272] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 00:52:05.780[1704397925780] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/rYDhOGZWMrVVv6upWOaiYs4BztGcz3ZJRRoNtY1gaVAIZMoKneikfUiGZRF6WARQ
+2024-01-05 00:52:07.358[1704397927358] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 00:54:01.966[1704398041966] | ERROR | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Failure
+java.lang.RuntimeException: org.codehaus.jackson.map.JsonMappingException: Unrecognized field "e" (Class com.binance.connector.myyyyyFUTURE.suchnostyotservera.acaunt.AccountUpdate), not marked as ignorable
+ at [Source: java.io.StringReader@38d9b09e; line: 1, column: 2]
+	at com.binance.connector.myyyyyFUTURE.parsery.ParserUserSoceta.parseAccountUpdate(ParserUserSoceta.java:16)
+	at com.binance.connector.myyyyyFUTURE.processory.Processor.priemDannyhPolzovatelya(Processor.java:63)
+	at com.binance.connector.myyyyyFUTURE.streampotoki.UserDataStream$1.onReceive(UserDataStream.java:23)
+	at com.binance.connector.futures.client.utils.WebSocketConnection.onMessage(WebSocketConnection.java:85)
+	at okhttp3.internal.ws.RealWebSocket.onReadMessage(RealWebSocket.kt:333)
+	at okhttp3.internal.ws.WebSocketReader.readMessageFrame(WebSocketReader.kt:245)
+	at okhttp3.internal.ws.WebSocketReader.processNextFrame(WebSocketReader.kt:106)
+	at okhttp3.internal.ws.RealWebSocket.loopReader(RealWebSocket.kt:293)
+	at okhttp3.internal.ws.RealWebSocket$connect$1.onResponse(RealWebSocket.kt:195)
+	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: org.codehaus.jackson.map.JsonMappingException: Unrecognized field "e" (Class com.binance.connector.myyyyyFUTURE.suchnostyotservera.acaunt.AccountUpdate), not marked as ignorable
+ at [Source: java.io.StringReader@38d9b09e; line: 1, column: 2]
+	at org.codehaus.jackson.map.JsonMappingException.from(JsonMappingException.java:153)
+	at org.codehaus.jackson.map.deser.StdDeserializationContext.unknownFieldException(StdDeserializationContext.java:174)
+	at org.codehaus.jackson.map.deser.StdDeserializer.reportUnknownProperty(StdDeserializer.java:279)
+	at org.codehaus.jackson.map.deser.StdDeserializer.handleUnknownProperty(StdDeserializer.java:265)
+	at org.codehaus.jackson.map.deser.BeanDeserializer.handleUnknownProperty(BeanDeserializer.java:495)
+	at org.codehaus.jackson.map.deser.BeanDeserializer.deserializeFromObject(BeanDeserializer.java:361)
+	at org.codehaus.jackson.map.deser.BeanDeserializer.deserialize(BeanDeserializer.java:299)
+	at org.codehaus.jackson.map.ObjectMapper._readMapAndClose(ObjectMapper.java:1002)
+	at org.codehaus.jackson.map.ObjectMapper.readValue(ObjectMapper.java:776)
+	at com.binance.connector.myyyyyFUTURE.parsery.ParserUserSoceta.parseAccountUpdate(ParserUserSoceta.java:13)
+	... 12 common frames omitted
+2024-01-05 02:26:18.399[1704403578399] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/rYDhOGZWMrVVv6upWOaiYs4BztGcz3ZJRRoNtY1gaVAIZMoKneikfUiGZRF6WARQ
+2024-01-05 02:26:20.104[1704403580104] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 02:27:42.960[1704403662960] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/LoHWQ7OsxVo5oKkEwYY0AHIF2O7KUtitca5UhLymYYFfgbmn1yyofflHcYqd6eP9
+2024-01-05 02:27:44.511[1704403664511] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 02:27:50.235[1704403670235] | ERROR | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Failure
+java.lang.RuntimeException: org.codehaus.jackson.map.JsonMappingException: Unrecognized field "e" (Class com.binance.connector.myyyyyFUTURE.suchnostyotservera.acaunt.AccountUpdate), not marked as ignorable
+ at [Source: java.io.StringReader@15deb2c3; line: 1, column: 2]
+	at com.binance.connector.myyyyyFUTURE.parsery.ParserUserSoceta.parseAccountUpdate(ParserUserSoceta.java:16)
+	at com.binance.connector.myyyyyFUTURE.processory.Processor.priemDannyhPolzovatelya(Processor.java:63)
+	at com.binance.connector.myyyyyFUTURE.streampotoki.UserDataStream$1.onReceive(UserDataStream.java:23)
+	at com.binance.connector.futures.client.utils.WebSocketConnection.onMessage(WebSocketConnection.java:85)
+	at okhttp3.internal.ws.RealWebSocket.onReadMessage(RealWebSocket.kt:333)
+	at okhttp3.internal.ws.WebSocketReader.readMessageFrame(WebSocketReader.kt:245)
+	at okhttp3.internal.ws.WebSocketReader.processNextFrame(WebSocketReader.kt:106)
+	at okhttp3.internal.ws.RealWebSocket.loopReader(RealWebSocket.kt:293)
+	at okhttp3.internal.ws.RealWebSocket$connect$1.onResponse(RealWebSocket.kt:195)
+	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+Caused by: org.codehaus.jackson.map.JsonMappingException: Unrecognized field "e" (Class com.binance.connector.myyyyyFUTURE.suchnostyotservera.acaunt.AccountUpdate), not marked as ignorable
+ at [Source: java.io.StringReader@15deb2c3; line: 1, column: 2]
+	at org.codehaus.jackson.map.JsonMappingException.from(JsonMappingException.java:153)
+	at org.codehaus.jackson.map.deser.StdDeserializationContext.unknownFieldException(StdDeserializationContext.java:174)
+	at org.codehaus.jackson.map.deser.StdDeserializer.reportUnknownProperty(StdDeserializer.java:279)
+	at org.codehaus.jackson.map.deser.StdDeserializer.handleUnknownProperty(StdDeserializer.java:265)
+	at org.codehaus.jackson.map.deser.BeanDeserializer.handleUnknownProperty(BeanDeserializer.java:495)
+	at org.codehaus.jackson.map.deser.BeanDeserializer.deserializeFromObject(BeanDeserializer.java:361)
+	at org.codehaus.jackson.map.deser.BeanDeserializer.deserialize(BeanDeserializer.java:299)
+	at org.codehaus.jackson.map.ObjectMapper._readMapAndClose(ObjectMapper.java:1002)
+	at org.codehaus.jackson.map.ObjectMapper.readValue(ObjectMapper.java:776)
+	at com.binance.connector.myyyyyFUTURE.parsery.ParserUserSoceta.parseAccountUpdate(ParserUserSoceta.java:13)
+	... 12 common frames omitted
+2024-01-05 02:48:16.757[1704404896757] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/LoHWQ7OsxVo5oKkEwYY0AHIF2O7KUtitca5UhLymYYFfgbmn1yyofflHcYqd6eP9
+2024-01-05 02:48:18.314[1704404898314] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 03:30:48.729[1704407448729] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/fTv1rlDxhUmW1LQPyNVgQY19x4TnHylHmpkezQ33Y0xZJIgTmLywAqVQaV1ZcqPu
+2024-01-05 03:30:50.355[1704407450355] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 03:39:12.996[1704407952996] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/fTv1rlDxhUmW1LQPyNVgQY19x4TnHylHmpkezQ33Y0xZJIgTmLywAqVQaV1ZcqPu
+2024-01-05 03:39:14.547[1704407954547] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 05:41:09.815[1704415269815] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=STOP_MARKET&timeInForce=GTC&quantity=159&stopPrice=0.01999&timestamp=1704415269767&signature=2295dbae4f829736ba8538202de73741a9b8b948fa18e7c9e1096620f87e74b1
+2024-01-05 05:43:37.219[1704415417219] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=STOP_MARKET&timeInForce=GTC&quantity=159&price=0.01999&timestamp=1704415417180&signature=bfd4cfea6c7a9be37cdea39015ed6c75c96083786642a1b11f5b20cb13e49892
+2024-01-05 05:44:16.824[1704415456824] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=STOP_MARKET&timeInForce=GTC&quantity=159&stopPrice=0.01999&timestamp=1704415456781&signature=76368712da18d96c352a5bf98cf1363c9322df6e3dab8277312d58e993f32952
+2024-01-05 05:49:02.644[1704415742644] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=STOP_MARKET&timeInForce=GTC&quantity=159&stopPrice=0.01995&reduceOnly=true&timestamp=1704415742594&signature=822d8e3e3ea9f8d3de9507455d0bf6fe012beaed89cd1ae2da7cbdc91403910e
+2024-01-05 05:49:04.515[1704415744515] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=TAKE_PROFIT_MARKET&timeInForce=GTC&quantity=158&stopPrice=0.0198&reduceOnly=true&timestamp=1704415744515&signature=a2bc1978aa59af911a2c5984c2bbd38730b31169410a45de7ee986004037021a
+2024-01-05 06:00:29.643[1704416429643] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=STOP_MARKET&timeInForce=GTC&quantity=159&stopPrice=0.01991&reduceOnly=true&timestamp=1704416429602&signature=4d422d0fb236111dc9c58bd6984a5df1a463e35ccbf2ae46428a8930f6f42b63
+2024-01-05 06:08:19.962[1704416899962] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=STOP_MARKET&timeInForce=GTC&quantity=120&stopPrice=0.01984&reduceOnly=true&timestamp=1704416899919&signature=607516613a75185828ff1f72b94a4191babb3974442fb75c9f36ce92762aa357
+2024-01-05 06:09:15.808[1704416955808] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=STOP_MARKET&timeInForce=GTC&quantity=120&stopPrice=0.0198&reduceOnly=true&timestamp=1704416955776&signature=2762f1083b87a0292700bd690aee0e6a436613d3b5380e00e3f7fd63551dbdbe
+2024-01-05 06:10:37.398[1704417037398] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=STOP_MARKET&timeInForce=GTC&quantity=120&stopPrice=0.01981&reduceOnly=true&timestamp=1704417037354&signature=73945b0a8922174525d917ea18d49a0b8fd9e8511a7799ee3a48a554f5de4d49
+2024-01-05 14:52:35.864[1704448355864] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=TAKE_PROFIT_MARKET&timeInForce=GTC&quantity=158&stopPrice=0.01971&reduceOnly=true&timestamp=1704448355824&signature=bb921761daba3ed8ba1b3495889598d9b72f47669a1ac18b79182c37783ed256
+2024-01-05 14:53:27.916[1704448407916] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=STOP_MARKET&timeInForce=GTC&quantity=120&stopPrice=0.01988&reduceOnly=true&timestamp=1704448407878&signature=5f566bda6d9effa183f9e417ec798ff086c46dd6631dfe60f64dbe441a08e8a1
+2024-01-05 14:55:49.720[1704448549720] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/1uN0eynLARhuQfWZbdONIO0BIwFM65xmi75jhJ2jHTFS5KKbw2zzz5cXQ6othzIP
+2024-01-05 14:55:51.258[1704448551258] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 15:04:02.456[1704449042456] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=STOP_MARKET&timeInForce=GTC&quantity=120&stopPrice=0.01981&reduceOnly=true&timestamp=1704449042415&signature=e56033087241cab5cf83308285913e7539f2efa4ad319741e7c6fc3e8d724a41
+2024-01-05 15:04:04.270[1704449044270] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=TAKE_PROFIT_MARKET&timeInForce=GTC&quantity=158&stopPrice=0.01975&reduceOnly=true&timestamp=1704449044270&signature=2e5fa8dd0de6d1fd027a5800e509c9dba95ebf72303ecbb8181e3f6af865915a
+2024-01-05 15:04:13.436[1704449053436] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/1uN0eynLARhuQfWZbdONIO0BIwFM65xmi75jhJ2jHTFS5KKbw2zzz5cXQ6othzIP
+2024-01-05 15:04:15.004[1704449055004] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 15:07:18.183[1704449238183] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=STOP_MARKET&timeInForce=GTC&quantity=120&stopPrice=0.01975&reduceOnly=true&timestamp=1704449238129&signature=eb39f86ea536ce2f5d8ed0ef36a037285e9ef0c64be9d88ba551d67a64fb9be6
+2024-01-05 15:07:19.998[1704449239998] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=TAKE_PROFIT_MARKET&timeInForce=GTC&quantity=158&stopPrice=0.0197&reduceOnly=true&timestamp=1704449239997&signature=392b0271eabc0cc9e903a7d79dcb78c4b91c9f869328ee302400ed2203e8593d
+2024-01-05 15:07:28.126[1704449248126] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/1uN0eynLARhuQfWZbdONIO0BIwFM65xmi75jhJ2jHTFS5KKbw2zzz5cXQ6othzIP
+2024-01-05 15:07:29.697[1704449249697] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 15:30:59.666[1704450659666] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=SELL&type=MARKET&quantity=307&reduceOnly=false&timestamp=1704450659607&signature=cb6a66cb1cdda60b9fa1ece111ecb7faebe61e99bea278666fcb9a471293588b
+2024-01-05 15:31:11.490[1704450671490] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=MARKET&quantity=307&reduceOnly=true&timestamp=1704450671490&signature=75b8f38dfcf7cdc3cf8a432f9942d18817443faa087b0b6739316ed0bc3c8d96
+2024-01-05 15:31:14.733[1704450674733] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/1uN0eynLARhuQfWZbdONIO0BIwFM65xmi75jhJ2jHTFS5KKbw2zzz5cXQ6othzIP
+2024-01-05 15:31:16.203[1704450676203] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 15:34:47.928[1704450887928] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/1uN0eynLARhuQfWZbdONIO0BIwFM65xmi75jhJ2jHTFS5KKbw2zzz5cXQ6othzIP
+2024-01-05 15:34:47.945[1704450887945] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=SELL&type=MARKET&quantity=307&reduceOnly=false&timestamp=1704450887940&signature=b5697c79fca4d634ed5a385cffd0396f00dcfea5a97c7f1b4ad7a86321ef7a00
+2024-01-05 15:34:49.531[1704450889531] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 15:34:59.548[1704450899548] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=BUY&type=MARKET&quantity=307&reduceOnly=true&timestamp=1704450899548&signature=d96866552c079a14e1d819d5ae539eeb5c3c0058b9c10ce9efb3f86885fd89b3
+2024-01-05 15:53:06.775[1704451986775] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/1uN0eynLARhuQfWZbdONIO0BIwFM65xmi75jhJ2jHTFS5KKbw2zzz5cXQ6othzIP
+2024-01-05 15:53:06.790[1704451986790] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=SELL&type=MARKET&quantity=307&reduceOnly=false&timestamp=1704451986785&signature=df1e51773ce046d3c036b5cb6b0c0a38ddf80b627a7209194a14e7ade5a847ca
+2024-01-05 15:53:08.393[1704451988393] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server

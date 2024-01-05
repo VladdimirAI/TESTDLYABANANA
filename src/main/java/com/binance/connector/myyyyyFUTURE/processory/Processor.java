@@ -7,6 +7,7 @@ import com.binance.connector.myyyyyFUTURE.bolinjer.BollingerBandsCalculator;
 import com.binance.connector.myyyyyFUTURE.parsery.ParserUserSoceta;
 import com.binance.connector.myyyyyFUTURE.parsery.SvecnoyParser;
 import com.binance.connector.myyyyyFUTURE.sushnosty.Order;
+import com.binance.connector.myyyyyFUTURE.sushnosty.OrderDTO;
 import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -17,9 +18,9 @@ import java.util.List;
 public class Processor {
 
 
-    public void priemJsonZakrytyhSvechey(JSONObject jsonSvecha) {
+    public void priemJsonZakrytyhSvechey(JSONObject jsonSvechaZakrytaya) {
 
-        Svecha svecha = SvecnoyParser.parseSvecha(jsonSvecha);
+        Svecha svecha = SvecnoyParser.parseSvecha(jsonSvechaZakrytaya);
         String symbol = svecha.money;
 
         // метод добавления свечи
@@ -58,10 +59,31 @@ public class Processor {
     }
 
 
-    public void priemDannyhPolzovatelya(String dannyeOtSoceta) {
-        System.out.println(dannyeOtSoceta);
-        GURU.accountUpdate = ParserUserSoceta.parseAccountUpdate(dannyeOtSoceta); //todo многопоток ее могут начат читать  пока она записываься - ИСПРАВИТЬ В БУДУЩЕМ
+    public void priemDannyhPolzovatelya(String dannyeOtSoceta) { //todo многопоток ее могут начат читать  пока она записываься - ИСПРАВИТЬ В БУДУЩЕМ
+        JSONObject jsonObj = new JSONObject(dannyeOtSoceta);
+        String eventType = jsonObj.getString("e");
+
+        switch (eventType) {
+
+            case "ORDER_TRADE_UPDATE":
+                System.out.println("Тип события ORDER_TRADE_UPDATE " + eventType);// Парсинг обновления ордера
+                OrderDTO orderDTO = ParserUserSoceta.handleOrderTradeUpdate(dannyeOtSoceta);
+                procesPriInfoObOrdere(orderDTO);
+                break;
+            case "ACCOUNT_UPDATE":
+                System.out.println("Тип события ACCOUNT_UPDATE " + eventType);// Парсинг обновления аккаунта
+                ParserUserSoceta.parseAccountUpdate(dannyeOtSoceta);
+                break;
+            case "OUTBOUND_ACCOUNT_POSITION":
+                System.out.println("Тип события OUTBOUND_ACCOUNT_POSITION ---------------------------------------------------==================== " + eventType);// Парсинг обновления баланса
+                break;
+            // Дополнительные типы сообщений
+            default:
+                System.out.println("Неизвестный тип события: " + eventType);
+                break;
+        }
     }
+
 //после открытия рантайм  {"e":"ACCOUNT_UPDATE","T":1704388422171,"E":1704388422173,"a":{"B":[{"a":"USDT","wb":"19.27388055","cw":"19.27388055","bc":"0"}],"P":[{"s":"ACHUSDT","pa":"300","ep":"0.02","cr":"-0.02783998","up":"-0.00300000","mt":"cross","iw":"0","ps":"BOTH","ma":"USDT","bep":"0.02001"}],"m":"ORDER"}}
 //после закрытия вторым рантайм в другую сторону {"e":"ACCOUNT_UPDATE","T":1704388431285,"E":1704388431287,"a":{"B":[{"a":"USDT","wb":"19.26788205","cw":"19.26788205","bc":"0"}],"P":[{"s":"ACHUSDT","pa":"0","ep":"0","cr":"-0.03083998","up":"0","mt":"cross","iw":"0","ps":"BOTH","ma":"USDT","bep":"0"}],"m":"ORDER"}}
     //s: Символ торговой пары (например, "ACHUSDT"). //закрыл в рантайме -рантаймом
@@ -101,6 +123,85 @@ public class Processor {
 //    ma: Валюта маржи (например, "USDT").
 
     //        System.out.println("Результат арифметической нагрузки: " + result);
+
+    public void procesPriInfoObOrdere(OrderDTO orderDTO) {
+
+        if (orderDTO.orderStatus.equals("FILLED") && orderDTO.side.equals("BUY")) { // реагируем только на завершенне и в покупку - тоесть против нашего рантайма - ордера
+
+            String symbol = orderDTO.symbol;
+            long orderId = orderDTO.orderId;
+
+
+            if (GURU.getTakeProfitOrders().get(symbol).getOrderId() == orderId) {
+                orderDTO.setTip("TAKEPROFIT");
+            } else if (GURU.getRunTimeOrders().get(symbol).getOrderId() == orderId) {
+                orderDTO.setTip("RUNTIME");
+            } else if (GURU.getStopLossOrders().get(symbol).getOrderId() == orderId) {
+                orderDTO.setTip("STOPLOSS");
+            }
+
+
+            //todo провверить что везде ложаться при создний в ордер менеджере
+            if (orderDTO.getTip().equals("TAKEPROFIT")) { //todo бывает только в верхней половине
+                double cenaSrabotavshegoTP =  GURU.getTakeProfitOrders().get(symbol).getCenaVhoda();
+                GURU.getTakeProfitOrders().remove(symbol); //todo удаляем тейк профит из листа - его заменит стоплосс ниже - чуть выше сма
+
+                double vOrdereColichestvo =  GURU.getRunTimeOrders().get(symbol).colichestvoCuplennuhMonet; //todo сетим число монет в рантайме
+                GURU.getRunTimeOrders().get(symbol).colichestvoCuplennuhMonet = vOrdereColichestvo - orderDTO.originalQuantity; // перепроверить правильное ли значение приходит в тейкпрояит при егсиполнении 50% должно быть
+
+
+                double dobavka = cenaSrabotavshegoTP * (PrivateConfig.PERESTANOVKATPPROCENTDOBAVKIKSMA / 100.0); // Рассчитываем 2% от цены
+                double novayaCena = cenaSrabotavshegoTP + dobavka; // Прибавляем 2% к начальной цене
+
+                GURU.orderManager.creatMARKETOrderStopLoss(symbol,vOrdereColichestvo,novayaCena); //todo создаем новый стоп за место тейка тоже на 50%
+                GURU.orderManager.cancelOrder(symbol,GURU.getStopLossOrders().get(symbol).getOrderId());//todo удаляем старый стоп имет ли смыслы строка сверху или снизу этой ??
+
+                //todo при создании нового ордера стоп старый в ГУРУ сам долджен затерется.
+
+
+
+
+
+            } else if (orderDTO.getTip().equals("RUNTIME")) { //todo просматриваем и кенселим все стопы и тейки
+                GURU.getRunTimeOrders().remove(symbol);
+
+                    if(GURU.getStopLossOrders().containsKey(symbol)){ //
+                        Order tecuhiySTOrder = GURU.getStopLossOrders().get(symbol);//
+                        GURU.orderManager.cancelOrder(symbol,tecuhiySTOrder.getOrderId());//todo отменяем текущий СТОП ордер
+
+                        GURU.getStopLossOrders().remove(symbol);
+                        }
+                    if (GURU.getTakeProfitOrders().containsKey(symbol)){
+                        Order tecuhiyTPOrder = GURU.getTakeProfitOrders().get(symbol);
+                        GURU.orderManager.cancelOrder(symbol,tecuhiyTPOrder.getOrderId()); //todo отменяем текущий ПРОФИТ ордер
+
+                        GURU.getTakeProfitOrders().remove(symbol);
+                        }
+
+
+
+
+            } else if (orderDTO.getTip().equals("STOPLOSS")) { //todo  - рантайм будет сам леквидирован независимо от половины низ или вверх               // todo в будещем поставить просто елсе
+                GURU.getStopLossOrders().remove(symbol);
+
+                if(GURU.getTakeProfitOrders().containsKey(symbol)){
+
+                   long idTekushegoTPOrdera = GURU.getTakeProfitOrders().get(symbol).getOrderId();
+                   GURU.orderManager.cancelOrder(symbol,idTekushegoTPOrdera);
+                   GURU.getTakeProfitOrders().remove(symbol);
+
+                }
+
+
+
+            }
+
+
+        }
+
+    }
+
+
     ///todo/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     public static void processAccountUpdate(JSONObject jsonEvent) {
         System.out.println("Внутри processAccountUpdate");
@@ -245,40 +346,7 @@ public class Processor {
     }
 
 
-    public static void lisenBalanceAndOrders(String event) {
-        System.out.println("В методе lisenBalanceAndOrders");
-        JSONObject jsonEvent = new JSONObject(event);
-        String eventType = jsonEvent.getString("e");
 
-        System.out.println("111111111111111");
-        switch (eventType) {
-            case "outboundAccountPosition":
-                // Обработка обновления баланса аккаунта
-                System.out.println("111111111111112");
-                Processor.processAccountUpdate(jsonEvent);
-                break;
-            case "executionReport":
-                System.out.println("111111111111113");
-                // Обработка обновления ордеров
-                Processor.processOrderUpdate(jsonEvent);
-                break;
-            case "listStatus":
-                System.out.println("111111111111114");
-                // Обработка обновления OCO ордеров
-                Processor.processOcoOrderUpdate(jsonEvent);
-                break;
-            case "balanceUpdate":
-                // Новый case для обработки balanceUpdate
-                System.out.println("111111111111116");
-                Processor.processBalanceUpdate(jsonEvent);
-                break;
-            default:
-                System.out.println("111111111111115");
-                // Логика для других типов событий
-                handleOtherEvents(jsonEvent);
-                break;
-        }
-    }
 
     private static void handleOtherEvents(JSONObject jsonEvent) {
         System.out.println("Внутри handleOtherEvents");
@@ -316,7 +384,7 @@ public class Processor {
 //        return OrderManager.marketMarginOrderShell(simbol, svecha.getClose(), PrivateConfig.NA_ODIN_ORDER_V_USDT);
         double quantity = (PrivateConfig.NA_ODIN_ORDER_V_USDT / svecha.getClose());
         double ocruglenuyQuantitySuchetomMonety = GURU.ocruglitel(quantity, GURU.getMapPosleZapytoy().get(symbol).cifrPosleZapytoyDlyaLotaVoVTOROYMONETE);
-        Order order = GURU.orderManager.createMarketOrder(symbol, "SELL", ocruglenuyQuantitySuchetomMonety);
+        Order order = GURU.orderManager.createMarketOrder(symbol, "SELL", ocruglenuyQuantitySuchetomMonety,false);
         order.setCenaVhoda(svecha.getClose());
         return order;
     }

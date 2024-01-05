@@ -11,7 +11,7 @@ public class ProcessorZakruvator { //todo проверить все методы
 
             double skolichestvoMonet = GURU.getRunTimeOrders().get(symbol).getCummulativeQuoteQty();
 
-            GURU.orderManager.createMarketOrder(symbol,"BUY",skolichestvoMonet);
+            GURU.orderManager.createMarketOrder(symbol,"BUY",skolichestvoMonet,true);
 
             GURU.getRunTimeOrders().remove(symbol);
         }

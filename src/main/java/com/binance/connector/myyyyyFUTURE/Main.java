@@ -20,15 +20,19 @@ public class Main {
 
         GURU.activator(oldMoneyZnak);
 
-        GetterAndParserSvechey.getVseSvechiizSpiska(oldMoneyZnak);
+//        GetterAndParserSvechey.getVseSvechiizSpiska(oldMoneyZnak);
+
+
+
 
 
 //        AllPairsCandlestickStream allPairsCandlestickStream = new AllPairsCandlestickStream();
-//        allPairsCandlestickStream.subscribeToAllPairsCandlesticks(GURU.MONEY,PrivateConfig.TIMENG);
+//        allPairsCandlestickStream.subscribeToAllPairsCandlesticks(GURU.MONEY,PrivateConfig.TIMENG);  // todo раз в 24 часа перепдключать
 //
-//        UserDataStream userDataStream = new UserDataStream();
-//        userDataStream.subscribeToUserDataStream(PrivateConfig.LISTEN_KEY);
+        UserDataStream userDataStream = new UserDataStream();
+        userDataStream.subscribeToUserDataStream(PrivateConfig.LISTEN_KEY); // todo раз в 40 минут делать renew PUT запрос
 
+        OrderManager.main();
 //        OrderManager orderManager = new OrderManager(PrivateConfig.API_KEY, PrivateConfig.SECRET_KEY);
 //
 //        // Создание маркет ордера на продажу (SHORT)

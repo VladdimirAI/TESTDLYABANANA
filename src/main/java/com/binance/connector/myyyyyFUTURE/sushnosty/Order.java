@@ -14,6 +14,8 @@ public class Order {
 
     public int kakayaPoshetuSvecha;
 
+    public double colichestvoCuplennuhMonet;
+
     public boolean verhnyayPolovina; //todo спользуеться только для рантайм оредров
 
     public Order() {
@@ -95,6 +97,15 @@ public class Order {
 
     public void setCenaVhoda(double cenaVhoda) {
         this.cenaVhoda = cenaVhoda;
+    }
+
+
+    public double getColichestvoCuplennuhMonet() {
+        return colichestvoCuplennuhMonet;
+    }
+
+    public void setColichestvoCuplennuhMonet(double colichestvoCuplennuhMonet) {
+        this.colichestvoCuplennuhMonet = colichestvoCuplennuhMonet;
     }
 
     @Override

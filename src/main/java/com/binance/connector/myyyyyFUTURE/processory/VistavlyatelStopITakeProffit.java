@@ -5,7 +5,6 @@ import com.binance.connector.myyyyyFUTURE.GURU;
 import com.binance.connector.myyyyyFUTURE.PrivateConfig;
 import com.binance.connector.myyyyyFUTURE.sushnosty.Order;
 import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
-import com.binance.connector.myyyyyFUTURE.ustanovkaorderov.OrderManager;
 
 public class VistavlyatelStopITakeProffit {
 
@@ -26,11 +25,11 @@ public class VistavlyatelStopITakeProffit {
         double takeProfit = svecha.getSma(); // todo нужен только в верхней половине
 //        double takeProfitTwo = svecha.getDownBolinjer();
 
-        Order orderStop = (GURU.orderManager.creatLIMITOrderStopLoss(symbol, orderRunTime.getCummulativeQuoteQty(), stopLoss));
+        Order orderStop = (GURU.orderManager.creatMARKETOrderStopLoss(symbol, orderRunTime.getCummulativeQuoteQty(), stopLoss));
         orderStop.setCenaVhoda(stopLoss);
         GURU.addStopLossOrder(orderStop); //todo переделать потом в менеджере на человечиский со стопами
 //       GURU.addOCOOrder(OcoOrderExecutor.createOCOOrder(symbol, ocruglenuyQuantitySuchetomMonety50, takeProfitTwo, stopLoss, doSkolkiGotovyBratUbytok));
-        Order orderProfit = (GURU.orderManager.creatLIMITOrderTakeProfit(symbol, ocruglenuyQuantitySuchetomMonety50, takeProfit));
+        Order orderProfit = (GURU.orderManager.creatMARKETrderTakeProfit(symbol, ocruglenuyQuantitySuchetomMonety50, takeProfit));
         orderProfit.setCenaVhoda(takeProfit);
         GURU.addTakeProfitOrder(orderProfit);
 
