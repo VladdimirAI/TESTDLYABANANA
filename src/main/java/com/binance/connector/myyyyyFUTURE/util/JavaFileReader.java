@@ -6,9 +6,11 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+//C:\BINACEFUTURE\binance-futures-connector-java-main\src\main\java\com\binance\connector\myyyyyFUTURE\MYTEST
+
 public class JavaFileReader {
     public static void main(String[] args) {
-        String startFolder = "C:\\Users\\svn13\\Downloads\\binance-futures-connector-java-main\\binance-futures-connector-java-main"; // Укажите путь к начальной папке
+        String startFolder = "C:\\BINACEFUTURE\\binance-futures-connector-java-main\\src\\main\\java\\com\\binance\\connector\\myyyyyFUTURE\\MYTEST"; // Укажите путь к начальной папке
 
         try {
             StringBuilder contentBuilder = new StringBuilder();
@@ -27,7 +29,7 @@ public class JavaFileReader {
             String allJavaCode = contentBuilder.toString();
 
             // Теперь можно записать содержимое в текстовый документ
-            try (PrintWriter writer = new PrintWriter("binance-futures-connector-java1.txt")) {
+            try (PrintWriter writer = new PrintWriter("binance-futures-connectorTEST2.txt")) {
                 writer.write(allJavaCode);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();

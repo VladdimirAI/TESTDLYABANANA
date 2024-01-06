@@ -102,3 +102,52 @@ Caused by: org.codehaus.jackson.map.JsonMappingException: Unrecognized field "e"
 2024-01-05 15:53:06.775[1704451986775] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/1uN0eynLARhuQfWZbdONIO0BIwFM65xmi75jhJ2jHTFS5KKbw2zzz5cXQ6othzIP
 2024-01-05 15:53:06.790[1704451986790] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/order?symbol=ACHUSDT&side=SELL&type=MARKET&quantity=307&reduceOnly=false&timestamp=1704451986785&signature=df1e51773ce046d3c036b5cb6b0c0a38ddf80b627a7209194a14e7ade5a847ca
 2024-01-05 15:53:08.393[1704451988393] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 18:38:11.140[1704461891140] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/stream
+2024-01-05 18:38:12.933[1704461892933] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 19:32:54.869[1704465174869] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/stream
+2024-01-05 19:32:56.663[1704465176663] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 19:44:59.771[1704465899771] | ERROR | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Failure
+java.lang.NullPointerException: Cannot invoke "java.util.List.add(Object)" because "tekushuyList" is null
+	at com.binance.connector.myyyyyFUTURE.processory.Processor.addSvecha(Processor.java:395)
+	at com.binance.connector.myyyyyFUTURE.processory.Processor.priemJsonZakrytyhSvechey(Processor.java:27)
+	at com.binance.connector.myyyyyFUTURE.streampotoki.AllPairsCandlestickStream$1.onReceive(AllPairsCandlestickStream.java:44)
+	at com.binance.connector.futures.client.utils.WebSocketConnection.onMessage(WebSocketConnection.java:85)
+	at okhttp3.internal.ws.RealWebSocket.onReadMessage(RealWebSocket.kt:333)
+	at okhttp3.internal.ws.WebSocketReader.readMessageFrame(WebSocketReader.kt:245)
+	at okhttp3.internal.ws.WebSocketReader.processNextFrame(WebSocketReader.kt:106)
+	at okhttp3.internal.ws.RealWebSocket.loopReader(RealWebSocket.kt:293)
+	at okhttp3.internal.ws.RealWebSocket$connect$1.onResponse(RealWebSocket.kt:195)
+	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+2024-01-05 19:48:05.523[1704466085523] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/stream
+2024-01-05 19:48:07.034[1704466087034] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 23:35:27.085[1704479727085] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/listenKey
+2024-01-05 23:35:28.794[1704479728794] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/stream
+2024-01-05 23:35:28.797[1704479728797] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 2] Connecting to fstream.binance.com/ws/%7B%22listenKey%22:%223tryAGmB8D0YpWRYQ3jlkIXsQqxT1WZ79fLrTzVCpREt7wlJbnJx4Bg4NoY7LGyX%22%7D
+2024-01-05 23:35:30.224[1704479730224] | ERROR | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 2] Failure
+java.net.ProtocolException: Expected HTTP 101 response but was '400 Bad Request'
+	at okhttp3.internal.ws.RealWebSocket.checkUpgradeSuccess$okhttp(RealWebSocket.kt:224)
+	at okhttp3.internal.ws.RealWebSocket$connect$1.onResponse(RealWebSocket.kt:170)
+	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+2024-01-05 23:35:30.234[1704479730234] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 23:36:02.544[1704479762544] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/listenKey
+2024-01-05 23:36:04.157[1704479764157] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/%7B%22listenKey%22:%223tryAGmB8D0YpWRYQ3jlkIXsQqxT1WZ79fLrTzVCpREt7wlJbnJx4Bg4NoY7LGyX%22%7D
+2024-01-05 23:36:05.611[1704479765611] | ERROR | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Failure
+java.net.ProtocolException: Expected HTTP 101 response but was '400 Bad Request'
+	at okhttp3.internal.ws.RealWebSocket.checkUpgradeSuccess$okhttp(RealWebSocket.kt:224)
+	at okhttp3.internal.ws.RealWebSocket$connect$1.onResponse(RealWebSocket.kt:170)
+	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1623)
+2024-01-05 23:40:13.550[1704480013550] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/listenKey
+2024-01-05 23:40:15.133[1704480015133] | INFO  | main       | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connecting to fstream.binance.com/ws/3tryAGmB8D0YpWRYQ3jlkIXsQqxT1WZ79fLrTzVCpREt7wlJbnJx4Bg4NoY7LGyX
+2024-01-05 23:40:16.559[1704480016559] | INFO  | OkHttp https://fstream.binance.com/... | c.b.c.f.c.utils.WebSocketConnection  - [Connection 1] Connected to Server
+2024-01-05 23:50:06.477[1704480606477] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/listenKey
+2024-01-05 23:51:23.431[1704480683431] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/listenKey
+2024-01-05 23:54:05.416[1704480845416] | INFO  | main       | c.b.c.f.client.utils.RequestHandler  - POST https://fapi.binance.com/fapi/v1/listenKey

@@ -1,5 +1,6 @@
 package com.binance.connector.myyyyyFUTURE;
 
+import com.binance.connector.myyyyyFUTURE.mp3.MP3Player;
 import com.binance.connector.myyyyyFUTURE.parsery.Parser;
 import com.binance.connector.myyyyyFUTURE.processory.Processor;
 import com.binance.connector.myyyyyFUTURE.suchnostyotservera.acaunt.AccountUpdate;
@@ -137,6 +138,9 @@ public class GURU {
     public static Map<String, Order> getTakeProfitOrders() {return takeProfitOrders;}
 
 
+    public static void playSIGNAL(){
+        MP3Player.play("musicSignal.mp3");
+    }
 
 }
 

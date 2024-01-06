@@ -4,12 +4,17 @@ import com.binance.connector.myyyyyFUTURE.parsery.GetterAndParserSvechey;
 import com.binance.connector.myyyyyFUTURE.parsery.ReaderMoney;
 import com.binance.connector.myyyyyFUTURE.streampotoki.AllPairsCandlestickStream;
 import com.binance.connector.myyyyyFUTURE.streampotoki.UserDataStream;
-import com.binance.connector.myyyyyFUTURE.ustanovkaorderov.OrderManager;
 
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
-    //    DefaultUrls
+    public static   AllPairsCandlestickStream allPairsCandlestickStream;
+    public static UserDataStream userDataStream;
+    public static String listenKey;
+
     public static void main(String[] args) {
 
         ReaderMoney readerMoney = new ReaderMoney();
@@ -20,19 +25,89 @@ public class Main {
 
         GURU.activator(oldMoneyZnak);
 
-//        GetterAndParserSvechey.getVseSvechiizSpiska(oldMoneyZnak);
+        GetterAndParserSvechey.getVseSvechiizSpiska(oldMoneyZnak);
 
 
+        listenKey = GURU.orderManager.createListenKey();
+        System.out.println(listenKey);
 
 
-
-//        AllPairsCandlestickStream allPairsCandlestickStream = new AllPairsCandlestickStream();
-//        allPairsCandlestickStream.subscribeToAllPairsCandlesticks(GURU.MONEY,PrivateConfig.TIMENG);  // todo раз в 24 часа перепдключать
+        allPairsCandlestickStream = new AllPairsCandlestickStream();
+        allPairsCandlestickStream.subscribeToAllPairsCandlesticks(GURU.MONEY, PrivateConfig.TIMENG);  // todo раз в 24 часа перепдключать
 //
-        UserDataStream userDataStream = new UserDataStream();
-        userDataStream.subscribeToUserDataStream(PrivateConfig.LISTEN_KEY); // todo раз в 40 минут делать renew PUT запрос
+        userDataStream = new UserDataStream();
+        userDataStream.subscribeToUserDataStream(listenKey);
+//        userDataStream.subscribeToUserDataStream(PrivateConfig.LISTEN_KEY);  // для тестов
 
-        OrderManager.main();
+
+
+
+
+
+
+
+
+
+        ScheduledExecutorService executorServiceReconnect = Executors.newSingleThreadScheduledExecutor();
+        long periodReconnect = 24 * 60; // Период в минутах для переподключения (24 часа)
+        executorServiceReconnect.scheduleAtFixedRate(() -> reconnectStreams(), 24 * 60, periodReconnect, TimeUnit.MINUTES);
+
+
+        ///ниже продление листен кей
+
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(); // todo раз в 55 минут делает PUT запрос
+
+        // Запуск задачи с начальной задержкой 55 и повтором каждые 55 минут
+        long period = 53; // Период в минутах
+        executorService.scheduleAtFixedRate(() -> callMyMethod(), 53, period, TimeUnit.MINUTES);
+    }
+
+    public static void callMyMethod() {
+        GURU.orderManager.prodlenyeListenKey();
+//        GURU.playSIGNAL();
+    }
+
+
+
+    public static void reconnectStreams() {
+        try {
+            // Закрыть текущие WebSocket соединения
+            closeCurrentWebsocketConnections();
+
+            // Подождать некоторое время перед повторным подключением
+            Thread.sleep(3000); // Ожидание 3 секундs
+
+            // Повторно инициировать WebSocket соединения
+            initializeWebsocketConnections();
+        } catch (InterruptedException e) {
+            System.out.println("Неполадки в методе reconnectStreams()");
+            Thread.currentThread().interrupt();
+            e.printStackTrace();
+        } catch (Exception e) {
+            System.out.println("Неполадки 2222 в методе reconnectStreams()");
+            e.printStackTrace();
+        }
+    }
+
+    private static void closeCurrentWebsocketConnections() {
+       userDataStream.closeAllStream();
+       allPairsCandlestickStream.closeAllStream();
+    }
+
+    private static void initializeWebsocketConnections() {
+        // Здесь ваш код для создания и подключения новых WebSocket соединений
+        // Например: создание новых экземпляров AllPairsCandlestickStream и UserDataStream
+        allPairsCandlestickStream = new AllPairsCandlestickStream();
+        allPairsCandlestickStream.subscribeToAllPairsCandlesticks(GURU.MONEY, PrivateConfig.TIMENG);
+
+        UserDataStream userDataStream = new UserDataStream();
+        userDataStream.subscribeToUserDataStream(listenKey);
+    }
+
+}
+
+
+//        OrderManager.main();
 //        OrderManager orderManager = new OrderManager(PrivateConfig.API_KEY, PrivateConfig.SECRET_KEY);
 //
 //        // Создание маркет ордера на продажу (SHORT)
@@ -44,5 +119,3 @@ public class Main {
 //
 //        // Установка тейк-профита для шорта
 //        orderManager.setTakeProfitForShort("ACHUSDT", "0.01", "22000");
-    }
-}

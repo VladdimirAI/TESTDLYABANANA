@@ -132,12 +132,18 @@ public class Processor {
             long orderId = orderDTO.orderId;
 
 
-            if (GURU.getTakeProfitOrders().get(symbol).getOrderId() == orderId) {
+            Order takeProfitOrder = GURU.getTakeProfitOrders().get(symbol);
+            Order runTimeOrder = GURU.getRunTimeOrders().get(symbol);
+            Order stopLossOrder = GURU.getStopLossOrders().get(symbol);
+
+            if (takeProfitOrder != null && takeProfitOrder.getOrderId() == orderId) {
                 orderDTO.setTip("TAKEPROFIT");
-            } else if (GURU.getRunTimeOrders().get(symbol).getOrderId() == orderId) {
+            } else if (runTimeOrder != null && runTimeOrder.getOrderId() == orderId) {
                 orderDTO.setTip("RUNTIME");
-            } else if (GURU.getStopLossOrders().get(symbol).getOrderId() == orderId) {
+            } else if (stopLossOrder != null && stopLossOrder.getOrderId() == orderId) {
                 orderDTO.setTip("STOPLOSS");
+            }else {
+                orderDTO.setTip("LEVUYTIP");
             }
 
 

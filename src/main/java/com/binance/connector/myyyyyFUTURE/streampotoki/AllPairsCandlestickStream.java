@@ -21,6 +21,7 @@ public class AllPairsCandlestickStream {
     }
 
     public void subscribeToAllPairsCandlesticks(List<String> symbols, String interval) {
+        try {
         ArrayList<String> streams = new ArrayList<>();
 
         for (String symbol : symbols) {
@@ -31,7 +32,8 @@ public class AllPairsCandlestickStream {
             @Override
             public void onReceive(String message) {
                 // Здесь вы можете анализировать сообщения о свечах
-                System.out.println("Данные о свечах: " + message);
+//                System.out.println("Данные о свечах: " + message);
+                System.out.println("Данные о свечах: ");
 
                 // Пример обработки JSON-ответа
                 JSONObject jsonEvent = new JSONObject(message);
@@ -40,10 +42,22 @@ public class AllPairsCandlestickStream {
                 boolean isKlineClosed = kline.getBoolean("x");
                 if (isKlineClosed) {
                     System.out.println("Свеча закрыта");// Действия в случае, если свеча закрыта
-            processor.priemJsonZakrytyhSvechey(jsonEvent);
+                    processor.priemJsonZakrytyhSvechey(jsonEvent);
                 }
             }
+            // Добавление обработчика onFailureCallback
+
         });
+        } catch (Exception e) {
+            // Обработка исключения
+            System.err.println("Произошла ошибка во время работы вебсокета - предпологаю что обрыв - буду пробовать переподключаться: " + e.getMessage());
+            // Здесь можно добавить дополнительную логику обработки
+        }
+    }
+
+
+    public void closeAllStream(){
+    wsClient.closeAllConnections();
     }
 }
 

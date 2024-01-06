@@ -22,6 +22,14 @@ public class UserDataStream {
 //                System.out.println("Данные пользователя: " + message);
                 processor.priemDannyhPolzovatelya(message);
             }
+
+
         });
     }
+
+    public void closeAllStream(){
+        userWsClient.closeAllConnections();
+    }
+
+
 }

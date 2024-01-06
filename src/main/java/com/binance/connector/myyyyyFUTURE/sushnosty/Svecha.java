@@ -5,9 +5,11 @@ import java.awt.*;
 
 public class Svecha {
 
-    public final String money;
+//    public final String money;
+    public  String money; //todo для теста не файнал
 
-    private final long openTime;
+//    private final long openTime;
+    private long openTime; //todo для теста не файнал
     private final double open;
     private final double high;
     private final double low;
@@ -36,6 +38,25 @@ public class Svecha {
         this.color = color;
         this.money = money;
     }
+
+
+    // todo конструкторр для тестовой части
+    public Svecha(String money, long openTime, double open, double high, double low, double close) {
+        this.money = money;
+        this.openTime = openTime;
+        this.open = open;
+        this.high = high;
+        this.low = low;
+        this.close = close;
+    }
+    // todo конструкторр для тестовой части
+    public Svecha(double open, double high, double low, double close) {
+        this.open = open;
+        this.high = high;
+        this.low = low;
+        this.close = close;
+    }
+
 
     // Геттеры для open, high, low, close
 

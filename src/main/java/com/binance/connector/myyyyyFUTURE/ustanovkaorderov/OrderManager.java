@@ -5,6 +5,7 @@ import com.binance.connector.myyyyyFUTURE.GURU;
 import com.binance.connector.myyyyyFUTURE.PrivateConfig;
 import com.binance.connector.myyyyyFUTURE.parsery.ParserOrderov;
 import com.binance.connector.myyyyyFUTURE.sushnosty.Order;
+import org.json.JSONObject;
 
 import java.util.LinkedHashMap;
 
@@ -17,6 +18,7 @@ public class OrderManager {
     }
 
     public Order createMarketOrder(String symbol, String side, double quantity,boolean socrashat) { //"origType":"MARKET"//todo квенти был стриннгом - если будут неполадки сомтреть сюда
+    GURU.playSIGNAL();//todo играем музыку!!!!!!!!!!
 
         double ocruglenuyQuantitySuchetomMonety = GURU.ocruglitel(quantity, GURU.getMapPosleZapytoy().get(symbol).cifrPosleZapytoyDlyaLotaVoVTOROYMONETE);
 
@@ -71,6 +73,8 @@ public class OrderManager {
         // Существующие методы...
 
         public Order creatMARKETrderTakeProfit(String symbol, double quantity, double price) {//"origType":"LIMIT"  .. название поменять МАркет
+            GURU.playSIGNAL();//todo играем музыку!!!!!!!!!!
+
 
         double ocruglenuyQuantitySuchetomMonety = GURU.ocruglitel(quantity, GURU.getMapPosleZapytoy().get(symbol).cifrPosleZapytoyDlyaLotaVoVTOROYMONETE);
 
@@ -97,6 +101,8 @@ public class OrderManager {
 
 
     public Order creatMARKETOrderStopLoss(String symbol, double quantity, double price) {//"origType":"STOP_MARKET"
+        GURU.playSIGNAL();//todo играем музыку!!!!!!!!!!
+
 
         double ocruglenuyQuantitySuchetomMonety = GURU.ocruglitel(quantity, GURU.getMapPosleZapytoy().get(symbol).cifrPosleZapytoyDlyaLotaVoVTOROYMONETE);
 
@@ -151,7 +157,18 @@ public class OrderManager {
     }
 
 
-    }
+
+   public void prodlenyeListenKey(){
+        client.userData().extendListenKey();
+   }
+
+   public String createListenKey() {
+       String response = client.userData().createListenKey();
+       JSONObject json = new JSONObject(response);
+       return json.getString("listenKey");
+   }
+
+}
 
 //            orderManager.createMarketOrder("ACHUSDT","SELL",307);
 //            orderManager.createMarketOrder("ACHUSDT","BUY",307);
