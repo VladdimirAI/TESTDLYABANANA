@@ -1,0 +1,851 @@
+package examples.websocketstream.myyyyyy;
+
+
+
+import com.binance.connector.client.WebSocketStreamClient;
+import com.binance.connector.client.impl.WebSocketStreamClientImpl;
+
+public final class ACHUSDTPriceListener {
+
+    public static void main(String[] args) {
+        WebSocketStreamClient client = new WebSocketStreamClientImpl();
+
+        // Слушаем агрегированные данные торгов для пары ACHUSDT
+        client.aggTradeStream("achusdt", (event) -> {
+            System.out.println(event);
+            // Здесь можно добавить логику обработки полученных данных
+        });
+
+        // В данном примере соединение остается открытым, чтобы постоянно получать данные.
+        // Если нужно закрыть соединение, можно использовать client.closeAllConnections();
+    }
+}
+
+//ACHUSDTPriceListener:
+//
+//        Класс создан для прослушивания агрегированных данных торгов для пары ACHUSDT.
+//        Он получает и выводит данные о каждой сделке в реальном времени.
+//        Подобно другим примерам, соединение не закрывается автоматически, позволяя постоянно получать торговые данные.
+//    todo закрывалку поставить
+package examples.websocketstream.myyyyyy.dlyaSverki;
+
+import com.binance.connector.client.SpotClient;
+import com.binance.connector.client.impl.SpotClientImpl;
+import examples.PrivateConfig;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.math.BigInteger;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.LinkedHashMap;
+
+public class BinanceApiExample {
+
+    private static final String BASE_URL = "https://api.binance.com";
+
+//    private static String getSignature(String data, String key) throws NoSuchAlgorithmException, InvalidKeyException, UnsupportedEncodingException {
+//        Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
+//        SecretKeySpec secret_key = new SecretKeySpec(key.getBytes("UTF-8"), "HmacSHA256");
+//        sha256_HMAC.init(secret_key);
+//
+//        byte[] hash = sha256_HMAC.doFinal(data.getBytes("UTF-8"));
+//        return String.format("%064x", new BigInteger(1, hash));
+//    }
+//
+//    private static String sendSignedRequest(String url, String params) throws Exception {
+//        String signature = getSignature(params, PrivateConfig.SECRET_KEY);
+//        URL obj = new URL(url + "?" + params + "&signature=" + signature);
+//        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+//
+//        con.setRequestMethod("GET");
+//        con.setRequestProperty("X-MBX-APIKEY", PrivateConfig.API_KEY);
+//
+//        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+//        String inputLine;
+//        StringBuffer response = new StringBuffer();
+//
+//        while ((inputLine = in.readLine()) != null) {
+//            response.append(inputLine);
+//        }
+//        in.close();
+//
+//        return response.toString();
+//    }
+
+    public static void main(String[] args) {
+        SpotClient client = new SpotClientImpl(PrivateConfig.API_KEY, PrivateConfig.SECRET_KEY);
+
+        // Получение всех открытых маржинальных ордеров (лимитных и маркетовых)
+        String openMarginOrders = client.createMargin().getOpenOrders(new LinkedHashMap<>());
+        System.out.println("Открытые маржинальные ордера: " + openMarginOrders);
+
+        // Получение всех открытых маржинальных OCO ордеров
+        String openMarginOcoOrders = client.createMargin().getOcoOpenOrders(new LinkedHashMap<>());
+        System.out.println("Открытые маржинальные OCO ордера: " + openMarginOcoOrders);
+    }
+
+//тоже только отложенные
+}
+
+package examples.websocketstream.myyyyyy.dlyaSverki;
+
+import com.binance.connector.client.SpotClient;
+import com.binance.connector.client.impl.SpotClientImpl;
+import examples.PrivateConfig;
+
+import java.util.LinkedHashMap;
+
+public class GetActiveMarginOrders {
+    public static void main(String[] args) {
+        SpotClient client = new SpotClientImpl(PrivateConfig.API_KEY, PrivateConfig.SECRET_KEY);
+
+        // Получение всех активных маржинальных ордеров
+        String activeMarginOrders = client.createMargin().getOpenOrders(new LinkedHashMap<>());
+        System.out.println("Активные маржинальные ордера: " + activeMarginOrders);
+    }
+}
+//только отложенные
+
+package examples.websocketstream.myyyyyy.ip;
+
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
+public class GetPublicIP {
+
+    public static void main(String[] args) {
+        String ipServiceUrl = "http://httpbin.org/ip";
+        try {
+            URL url = new URL(ipServiceUrl);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuffer content = new StringBuffer();
+            while ((inputLine = in.readLine()) != null) {
+                content.append(inputLine);
+            }
+            in.close();
+            con.disconnect();
+
+            System.out.println("Your public IP: " + content.toString());
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+}
+
+package examples.websocketstream.myyyyyy;
+
+
+
+import com.binance.connector.client.WebSocketStreamClient;
+import com.binance.connector.client.impl.WebSocketStreamClientImpl;
+import org.json.JSONObject;
+
+public final class KlineDataListener {
+
+    public static void main(String[] args) {
+        WebSocketStreamClient client = new WebSocketStreamClientImpl();
+
+//        client.klineStream("achusdt", "15m", (event) -> {
+//            System.out.println("Kline Data: " + event);
+//            // Здесь можно добавить логику для обработки данных свечи.
+//        });
+
+        // Соединение остается открытым для непрерывного получения данных.
+
+        client.klineStream("achusdt", "1m", (event) -> {
+            JSONObject jsonEvent = new JSONObject(event);
+            JSONObject kline = jsonEvent.getJSONObject("k");
+            boolean isKlineClosed = kline.getBoolean("x");
+
+            if (isKlineClosed) {
+                // Это обновление для закрытой свечи
+                System.out.println("Закрытая свеча: " + event);
+                // Здесь можно добавить дополнительную логику обработки закрытой свечи
+            } else {
+                // Это промежуточное обновление для еще формирующейся свечи
+            }
+        });
+
+    }
+}
+
+
+//KlineDataListener:
+//
+//        Этот класс подключается к веб-сокету для получения данных о свечах (klines) для указанной торговой пары (achusdt) и временного интервала (1m означает одну минуту).
+//        Он выводит информацию о каждой закрытой свече в консоль.
+//        Соединение остаётся активным, чтобы получать обновления как для закрытых, так и для текущих формирующихся свечей.
+//        todo закрывалку поставить
+package examples.websocketstream.myyyyyy;
+
+
+
+
+import com.binance.connector.client.WebSocketStreamClient;
+import com.binance.connector.client.impl.WebSocketStreamClientImpl;
+import examples.websocketstream.myyyyyy.util.utilVutile.DataCallback;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+
+
+import com.binance.connector.client.WebSocketStreamClient;
+import com.binance.connector.client.impl.WebSocketStreamClientImpl;
+import examples.websocketstream.myyyyyy.util.utilVutile.DataCallback;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class KlineDataListenerV3 implements Runnable {
+    private final List<String> symbols;
+    private final String interval;
+    private final DataCallback dataCallback;
+
+    public KlineDataListenerV3(List<String> symbols, String interval, DataCallback dataCallback) {
+        this.symbols = symbols;
+        this.interval = interval;
+        this.dataCallback = dataCallback;
+    }
+
+    @Override
+    public void run() {
+        WebSocketStreamClient client = new WebSocketStreamClientImpl();
+
+        ArrayList<String> streams = new ArrayList<>();
+        for (String symbol : symbols) {
+            streams.add(symbol.toLowerCase() + "@kline_" + interval);
+        }
+
+        client.combineStreams(streams, (event) -> {
+            JSONObject jsonEvent = new JSONObject(event);
+            JSONObject jsonKline = jsonEvent.getJSONObject("k");
+            boolean isKlineClosed = jsonKline.getBoolean("x");
+            if (isKlineClosed) {
+                // Это обновление для закрытой свечи
+                String data = "Закрытая свеча для: " + event;
+                dataCallback.onDataReceived(data);
+            }
+        });
+
+        // Добавляем Shutdown Hook для закрытия всех соединений перед выходом
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("Выполняется закрытие всех соединений перед выходом...");
+            client.closeAllConnections();
+        }));
+    }
+}
+
+
+
+//KlineDataListener:
+//
+//        Этот класс подключается к веб-сокету для получения данных о свечах (klines) для указанной торговой пары (achusdt) и временного интервала (1m означает одну минуту).
+//        Он выводит информацию о каждой закрытой свече в консоль.
+//        Соединение остаётся активным, чтобы получать обновления как для закрытых, так и для текущих формирующихся свечей.
+//        todo закрывалку поставить
+package examples.websocketstream.myyyyyy;
+
+
+
+import com.binance.connector.client.WebSocketStreamClient;
+import com.binance.connector.client.impl.WebSocketStreamClientImpl;
+import java.util.ArrayList;
+
+public final class MultipleSymbolsPriceListener {
+
+    public static void main(String[] args) {
+        WebSocketStreamClient client = new WebSocketStreamClientImpl();
+
+        // Создаем список торговых пар для прослушивания
+        ArrayList<String> streams = new ArrayList<>();
+        streams.add("achusdt@miniTicker");
+        streams.add("xrpusdt@miniTicker");
+        streams.add("xlmusdt@miniTicker");
+
+        client.combineStreams(streams, (event) -> {
+            System.out.println(event);
+            // Здесь можно добавить логику для обработки данных каждой пары.
+        });
+
+        // Соединение остается открытым для непрерывного получения данных.
+        // Чтобы закрыть соединение, можно использовать client.closeAllConnections();
+    }
+}
+
+//MultipleSymbolsPriceListener:
+//
+//        Класс нацелен на прослушивание мини-тикеров (сжатая информация о ценах) для нескольких торговых пар.
+//        Список торговых пар (achusdt, xrpusdt, xlmusdt) может быть изменён для прослушивания других пар.
+//        Данные выводятся в консоль, и соединение также остаётся открытым для получения непрерывных обновлений.
+//        todo закрывалку поставить
+//package examples.websocketstream.myyyyyy.orderaandbalance;
+//
+//import org.json.JSONObject;
+//
+//import com.binance.connector.client.WebSocketStreamClient;
+//import com.binance.connector.client.impl.WebSocketStreamClientImpl;
+//import com.binance.connector.client.impl.SpotClientImpl;
+//import examples.PrivateConfig;
+//
+//public final class BalanceChangeListener {
+//
+//    public static void main(String[] args) {
+//        WebSocketStreamClient wsClient = new WebSocketStreamClientImpl();
+//        SpotClientImpl spotClient = new SpotClientImpl(PrivateConfig.API_KEY, PrivateConfig.SECRET_KEY);
+//
+//        JSONObject obj = new JSONObject(spotClient.createUserData().createListenKey());
+//        String listenKey = obj.getString("listenKey");
+//
+//        wsClient.listenUserStream(listenKey, (event) -> {
+//            System.out.println("Balance Change: " + event);
+//            // Обработка изменения баланса
+//        });
+//    }
+//}
+
+//package examples.websocketstream.myyyyyy.orderaandbalance;
+//
+//
+//import org.json.JSONObject;
+//
+//import com.binance.connector.client.WebSocketStreamClient;
+//import com.binance.connector.client.impl.WebSocketStreamClientImpl;
+//import com.binance.connector.client.impl.SpotClientImpl;
+//import examples.PrivateConfig;
+//
+//public final class OrderUpdateListener {
+//
+//    public static void main(String[] args) {
+//        WebSocketStreamClient wsClient = new WebSocketStreamClientImpl();
+//        SpotClientImpl spotClient = new SpotClientImpl(PrivateConfig.API_KEY, PrivateConfig.SECRET_KEY);
+//
+//        JSONObject obj = new JSONObject(spotClient.createUserData().createListenKey());
+//        String listenKey = obj.getString("listenKey");
+//
+//        wsClient.listenUserStream(listenKey, (event) -> {
+//            System.out.println("Order Update: " + event);
+//            // Обработка уведомления о срабатывании ордера
+//        });
+//    }
+//}
+
+package examples.websocketstream.myyyyyy.orderaandbalance;
+
+import com.binance.connector.client.WebSocketStreamClient;
+import com.binance.connector.client.impl.SpotClientImpl;
+import com.binance.connector.client.impl.WebSocketStreamClientImpl;
+import examples.PrivateConfig;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import com.binance.connector.client.WebSocketStreamClient;
+import com.binance.connector.client.impl.WebSocketStreamClientImpl;
+import examples.PrivateConfig;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public class UserStreamCherezSocet_balance_order implements Runnable {
+
+    @Override
+    public void run() {
+        WebSocketStreamClient wsClient = new WebSocketStreamClientImpl("wss://stream.binance.com:9443/ws");
+        SpotClientImpl spotClient = new SpotClientImpl(PrivateConfig.API_KEY, PrivateConfig.SECRET_KEY, "https://api.binance.com");
+
+        JSONObject obj = new JSONObject(spotClient.createUserData().createMarginListenKey());
+        String listenKey = obj.getString("listenKey");
+        System.out.println("listenKey: " + listenKey);
+
+        wsClient.listenUserStream(listenKey, (event) -> {
+            JSONObject jsonEvent = new JSONObject(event);
+            String eventType = jsonEvent.getString("e");
+            switch (eventType) {
+                case "balanceUpdate":
+                    // Обработка обновления баланса
+                    break;
+                case "outboundAccountPosition":
+                    // Обработка обновления позиции аккаунта
+                    break;
+                case "executionReport":
+                    // Обработка отчета о выполнении ордера
+                    break;
+                // Другие типы событий могут быть обработаны здесь
+            }
+        });
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("Закрытие WebSocket соединения...");
+            wsClient.closeAllConnections();
+        }));
+    }
+}
+
+
+
+//listenKey: CS7EyPqVP6VOtwrh0iHqrWpXrGThWYypScyeXgIrl5nxgS3hIEtdOI83jEC4
+//        Обновление баланса актива: ACH
+//        Измененный баланс: 540.00000000
+//        =======================================================
+//        Обновление позиции по аккаунту:
+//        Актив: ACH
+//        Доступный баланс: 540.00000000
+//        Заблокировано: 0.00000000
+//        =======================================================
+//        Отчет о выполнении ордера:
+//        Идентификатор ордера: 315232722
+//        Символ: ACHUSDT
+//        Статус ордера: NEW
+//        Количество: 540.00000000
+//        Цена исполнения: 0.00000000
+//        =======================================================
+//        Отчет о выполнении ордера:
+//        Идентификатор ордера: 315232722
+//        Символ: ACHUSDT
+//        Статус ордера: FILLED
+//        Количество: 540.00000000
+//        Цена исполнения: 0.02103000
+//        =======================================================
+//        Обновление позиции по аккаунту:
+//        Актив: BNB
+//        Доступный баланс: 0.00000000
+//        Заблокировано: 0.00000000
+//        Актив: USDT
+//        Доступный баланс: 35.46876609
+//        Заблокировано: 0.00000000
+//        Актив: ACH
+//        Доступный баланс: 0.00000000
+//        Заблокировано: 0.00000000
+//        =======================================================
+//        Обновление баланса актива: ACH
+//        Измененный баланс: 540.00402133
+//        =======================================================
+//        Обновление баланса актива: USDT
+//        Измененный баланс: -11.59588087
+//        =======================================================
+//        Обновление позиции по аккаунту:
+//        Актив: USDT
+//        Доступный баланс: 23.87288522
+//        Заблокировано: 0.00000000
+//        Актив: ACH
+//        Доступный баланс: 540.00402133
+//        Заблокировано: 0.00000000
+//        =======================================================
+//        Обновление баланса актива: ACH
+//        Измененный баланс: -540.00402133
+//        =======================================================
+//        Обновление позиции по аккаунту:
+//        Актив: ACH
+//        Доступный баланс: 0.00000000
+//        Заблокировано: 0.00000000
+//        =======================================================
+
+
+//{"B":[{"a":"BNB","f":"0.00000000","l":"0.00000000"},{"a":"USDT","f":"34.60318212","l":"0.00000000"},{"a":"ACH","f":"0.00000000","l":"0.00000000"}],"e":"outboundAccountPosition","E":1703816486596,"u":1703816486595}
+
+package examples.websocketstream.myyyyyy;
+
+
+
+import com.binance.connector.client.WebSocketStreamClient;
+import com.binance.connector.client.impl.WebSocketStreamClientImpl;
+import org.json.JSONObject;
+
+public final class SingleSymbolPriceListener {
+
+    public static void main(String[] args) {
+        WebSocketStreamClient client = new WebSocketStreamClientImpl();
+
+        client.symbolTicker("achusdt", (event) -> {
+            System.out.println("Price: " + new JSONObject(event).getString("c"));
+        });
+
+        // В данном случае соединение также остается открытым для непрерывного получения данных.
+    }
+}
+
+//SingleSymbolPriceListener:
+//
+//        Этот класс подключается к веб-сокету для получения данных о последней цене конкретной торговой пары (achusdt).
+//        Он прослушивает сообщения о тикере символа и выводит последнюю цену ("c") в консоль.
+//        Соединение остаётся открытым для постоянного получения последних данных о ценах.
+//todo закрывалку поставить
+package examples.websocketstream.myyyyyy.torgovlya;
+
+import com.binance.connector.client.impl.spot.Margin;
+import examples.PrivateConfig;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class MarginOrderCloser {
+
+    public static void main(String[] args) {
+        // Инициализация Margin с использованием конфигурации
+        Margin margin = new Margin(PrivateConfig.BASE_URL, PrivateConfig.API_KEY, PrivateConfig.SECRET_KEY, true, null);
+
+        // Определение параметров для закрытия маржинального ордера
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("symbol", "ACHUSDT");
+        parameters.put("side", "SELL"); // Закрытие позиции
+        parameters.put("type", "MARKET");
+        parameters.put("quantity", "1598"); // Количество для продажи должно соответствовать количеству в позиции
+        parameters.put("sideEffectType", "AUTO_REPAY"); // Автоматическое погашение долга по маржинальному плечу
+
+        // Если позиция была открыта с использованием изолированного плеча, укажите это
+        // parameters.put("isIsolated", "TRUE");
+
+        // Закрытие маржинального ордера и погашение долга
+        String orderResult = margin.newOrder(parameters);
+        System.out.println(orderResult);
+    }
+}
+
+package examples.websocketstream.myyyyyy.torgovlya;
+
+
+
+import com.binance.connector.client.impl.spot.Margin;
+import examples.PrivateConfig;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class MarginOrderExecutor {
+
+    public static void main(String[] args) {
+        // Инициализация Margin с использованием конфигурации
+        Margin margin = new Margin(PrivateConfig.BASE_URL, PrivateConfig.API_KEY, PrivateConfig.SECRET_KEY, true, null);
+
+        // Определение параметров для нового маржинального ордера
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("symbol", "ACHUSDT");
+        parameters.put("side", "BUY");
+        parameters.put("type", "MARKET");
+        parameters.put("quantity", "1600"); // Указываем количество для покупки
+        parameters.put("sideEffectType", "MARGIN_BUY"); // Указываем, что это маржинальная покупка
+
+        // Для использования изолированного плеча, раскомментируйте следующую строку
+        // parameters.put("isIsolated", "TRUE");
+
+        // Размещение нового маржинального ордера
+        String orderResult = margin.newOrder(parameters);
+        System.out.println(orderResult);
+    }
+}
+
+
+
+package examples.websocketstream.myyyyyy.torgovlya;
+
+import com.binance.connector.client.SpotClient;
+import com.binance.connector.client.impl.spot.Margin;
+import com.binance.connector.client.impl.spot.Trade;
+import examples.PrivateConfig;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class OcoOrderExecutor {
+
+    public static void main(String[] args) {
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("symbol", "ACHUSDT");
+        parameters.put("isIsolated", "FALSE"); // Для изолированной маржи
+        parameters.put("side", "BUY"); // Мы закрываем шорт, поэтому BUY
+        parameters.put("quantity", "700"); // Количество для закрытия позиции - открываеться и без самого ордера(работающего сейчас) - цена сейчас 0,02100 - лот монетами ach
+        parameters.put("price", "0.02000"); // Тейк-профит ниже цены входа в шорт
+        parameters.put("stopPrice", "0.02400"); // Стоп-лосс выше цены входа в шорт //todo  е если развернеться
+        parameters.put("stopLimitPrice", "0.02410"); // Стоп-лимит немного выше стоп-цены для учета проскальзывания
+        parameters.put("stopLimitTimeInForce", "GTC"); // Время действия ордера
+        parameters.put("sideEffectType", "AUTO_REPAY"); // Автоматический возврат при выполнении ордера - сработало во время того как был ордер
+//        parameters.put("sideEffectType", "MARGIN_BUY"); //  - сработало с маргин бай без ордера
+
+// ... Другие параметры по необходимости
+
+        Margin margin = new Margin(PrivateConfig.BASE_URL, PrivateConfig.API_KEY, PrivateConfig.SECRET_KEY, true, null);
+        String response = margin.ocoOrder(parameters);
+        System.out.println(response);
+
+    }
+}
+//0,02135
+package examples.websocketstream.myyyyyy.util;
+
+import java.util.*;
+
+
+public class GURU {
+
+    private static Set<Order> openOrders;
+    private static Set<Svecha> poslednyeSvechiisConsoli;
+    private static Map<String, List<Svecha>> historySvechey;
+    static List<String> MONEY;
+    static double buyBalace;
+    static double shellBalace;
+    static double realBalace;
+
+    public static void activator(List<String> MONEY) {
+        openOrders = new HashSet<>();
+        poslednyeSvechiisConsoli = new HashSet<>();
+        historySvechey = new HashMap<>();
+        GURU.MONEY = MONEY;
+    }
+
+    public static synchronized void setBuyBalance(double buyBalance) {
+        GURU.buyBalace = buyBalance;
+    }
+
+    public double getBuyBalance() {
+        return buyBalace;
+    }
+
+    public  static synchronized void setSellBalance(double sellBalance) {
+        shellBalace = sellBalance;
+    }
+
+    public double getSellBalance() {
+        return shellBalace;
+    }
+
+    public static synchronized void setRealBalance(double realBalance) {
+        realBalace = realBalance;
+    }
+
+    public double getRealBalance() {
+        return realBalace;
+    }
+
+}
+//todo statik and zapis sinhronaized
+package examples.websocketstream.myyyyyy.util;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+public class HistorySvechey {
+
+    String nameMoney;
+    List<Svecha> svichnoyHistory;
+
+    public HistorySvechey(String nameMoney) {
+        this.nameMoney = nameMoney;
+        svichnoyHistory = new ArrayList<>();
+    }
+
+    //todo не забыть подчищать
+
+
+
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(nameMoney);
+    }
+}
+
+package examples.websocketstream.myyyyyy.util;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class Order {
+
+    private String symbol;          // Символ валютной пары (например, "BTCUSDT")
+    private String side;            // Сторона ордера (BUY или SELL)
+    private String type;            // Тип ордера (MARKET, LIMIT и т.д.)
+    private String timeInForce;     // Время действия ордера (например, "GTC" для Good Till Cancelled)
+    private String quantity;        // Количество
+    private String price;           // Цена (для лимитных ордеров)
+    private Long timestamp;         // Временная метка создания ордера
+
+    // Конструкторы, геттеры и сеттеры
+    public Order() {
+    }
+
+    // Конструктор с параметрами
+    public Order(String symbol, String side, String type, String timeInForce, String quantity, String price) {
+        this.symbol = symbol;
+        this.side = side;
+        this.type = type;
+        this.timeInForce = timeInForce;
+        this.quantity = quantity;
+        this.price = price;
+        this.timestamp = System.currentTimeMillis(); // Устанавливаем текущее время
+    }
+
+    // Геттеры и сеттеры
+    // ...
+
+    // Методы для формирования параметров запроса
+    public Map<String, String> toParams() {
+        Map<String, String> params = new HashMap<>();
+        params.put("symbol", symbol);
+        params.put("side", side);
+        params.put("type", type);
+        params.put("timeInForce", timeInForce);
+        params.put("quantity", quantity);
+        params.put("price", price);
+        params.put("timestamp", timestamp.toString());
+        // Добавить другие необходимые параметры
+        return params;
+    }
+}
+
+
+package examples.websocketstream.myyyyyy.util;
+
+import examples.PrivateConfig;
+import examples.websocketstream.myyyyyy.KlineDataListenerV3;
+import examples.websocketstream.myyyyyy.orderaandbalance.UserStreamCherezSocet_balance_order;
+import examples.websocketstream.myyyyyy.util.utilVutile.ReaderMoney;
+
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+public class StartBot {
+    private ExecutorService executorService;
+
+    public static void main(String[] args) {
+        StartBot startBot = new StartBot();
+        startBot.start();
+    }
+
+    public void start() {
+        ReaderMoney readerMoney = new ReaderMoney();
+        List<String> oldMoneyZnak = readerMoney.readCurrencyPairsFromFile(PrivateConfig.MONEY_FILE);
+        for (String pair : oldMoneyZnak) {System.out.println(pair);}
+
+        GURU.activator(oldMoneyZnak);
+
+        executorService = Executors.newCachedThreadPool();
+
+        executorService.submit(new KlineDataListenerV3(GURU.MONEY, PrivateConfig.TIMENG));
+        executorService.submit(new UserStreamCherezSocet_balance_order());
+
+        // Включаем механизм безопасного завершения работы
+        executorService.shutdown(); // Отключаем добавление новых задач в executorService
+        try {
+            // Ожидаем завершения существующих задач или до истечения тайм-аута
+            if (!executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)) {
+                executorService.shutdownNow(); // Принудительное завершение, если время ожидания истекло
+            }
+        } catch (InterruptedException e) {
+            executorService.shutdownNow(); // Принудительное завершение, если текущий поток прерван
+        }
+        }));
+
+
+
+
+
+    }
+}
+
+package examples.websocketstream.myyyyyy.util;
+
+import java.awt.*;
+
+public class Svecha {
+
+    private final long openTime;
+    private final double open;
+    private final double high;
+    private final double low;
+    private final double close;
+
+    private Color color;
+
+    public Color getColor() {
+        return color;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
+    }
+
+    public Svecha(long openTime, double open, double high, double low, double close) {
+        this.openTime = openTime;
+        this.open = open;
+        this.high = high;
+        this.low = low;
+        this.close = close;
+    }
+
+    // Геттеры для open, high, low, close
+
+    public long getOpenTime() {
+        return openTime;
+    }
+
+    public double getOpen() {
+        return open;
+    }
+
+    public double getHigh() {
+        return high;
+    }
+
+    public double getLow() {
+        return low;
+    }
+
+    public double getClose() {
+        return close;
+    }
+
+}
+
+package examples.websocketstream.myyyyyy.util.utilVutile;
+
+public interface DataCallback {
+    void onDataReceived(String data);
+}
+
+
+package examples.websocketstream.myyyyyy.util.utilVutile;
+
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ReaderMoney {
+    public List<String> readCurrencyPairsFromFile(String filePath) {
+        List<String> currencyPairs = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                currencyPairs.add(line.trim());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return currencyPairs;
+    }
+}
+

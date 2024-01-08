@@ -1,0 +1,1999 @@
+package org.example;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class BollingerBandsCalculator {
+    public static List<Double> calculateSMA(List<Candlestick> candlesticks, int period) {
+        List<Double> sma = new ArrayList<>();
+        for (int i = 0; i < candlesticks.size(); i++) {
+            if (i < period - 1) {
+                sma.add(null);
+                continue;
+            }
+            double sum = 0;
+            for (int j = i; j > i - period; j--) {
+                sum += candlesticks.get(j).getClose();
+            }
+            sma.add(sum / period);
+        }
+        return sma;
+    }
+
+    public static List<Double[]> calculateBollingerBands(List<Candlestick> candlesticks, int period) {
+        List<Double> sma = calculateSMA(candlesticks, period);
+        List<Double[]> bands = new ArrayList<>();
+
+        for (int i = 0; i < candlesticks.size(); i++) {
+            if (i < period - 1) {
+                bands.add(new Double[]{null, null});
+                continue;
+            }
+            double sumOfSquares = 0;
+            for (int j = i; j > i - period; j--) {
+                sumOfSquares += Math.pow(candlesticks.get(j).getClose() - sma.get(i), 2);
+            }
+            double stddev = Math.sqrt(sumOfSquares / period);
+            bands.add(new Double[]{sma.get(i) + 2 * stddev, sma.get(i) - 2 * stddev});
+        }
+        return bands;
+    }
+}
+
+package org.example;
+
+import java.awt.*;
+
+public class Candlestick {
+    private final long openTime;
+    private final double open;
+    private final double high;
+    private final double low;
+    private final double close;
+
+    private  Color color;
+
+    public Color getColor() {
+        return color;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
+    }
+
+    public Candlestick(long openTime, double open, double high, double low, double close) {
+        this.openTime = openTime;
+        this.open = open;
+        this.high = high;
+        this.low = low;
+        this.close = close;
+    }
+
+    // Геттеры для open, high, low, close
+
+    public long getOpenTime() {
+        return openTime;
+    }
+
+    public double getOpen() {
+        return open;
+    }
+
+    public double getHigh() {
+        return high;
+    }
+
+    public double getLow() {
+        return low;
+    }
+
+    public double getClose() {
+        return close;
+    }
+}
+
+package org.example;
+
+import org.example.processor.AnalizerPatternOne;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
+
+public class CandlestickChart extends JPanel {
+
+    AnalizerPatternOne analizerPatternOne;
+
+    private final List<Candlestick> candlesticks;
+    private final List<Double[]> bollingerBands; // Данные линий Боллинджера
+    private final List<Double> smaValues; // Данные SMA
+    private double minPrice = Double.MAX_VALUE;
+    private double maxPrice = Double.MIN_VALUE;
+
+
+    private double scale = 1.0;
+    private final int minCandleWidth = 1;
+    private final int maxCandleWidth = 20;
+
+    public CandlestickChart(List<Candlestick> candlesticks, List<Double[]> bollingerBands, List<Double> smaValues) {
+        AnalizerPatternOne analizerPatternOne1 = new AnalizerPatternOne();
+        this.analizerPatternOne = analizerPatternOne1;
+        this.candlesticks = candlesticks;
+        this.bollingerBands = bollingerBands;
+        this.smaValues = smaValues;
+        calculatePriceRange();
+        setPreferredSize(new Dimension(800, 600));
+
+        addMouseWheelListener(e -> {
+            if (e.getWheelRotation() < 0) {
+                scale = Math.min(scale + 0.1, maxCandleWidth / (double) minCandleWidth);
+            } else {
+                scale = Math.max(scale - 0.1, 1.0);
+            }
+            updatePreferredSize(); // Обновляем размер компонента
+            repaint(); // Перерисовываем компонент
+
+        });
+
+    }
+
+    private void calculatePriceRange() {
+        for (Candlestick candle : candlesticks) {
+            minPrice = Math.min(minPrice, candle.getLow());
+            maxPrice = Math.max(maxPrice, candle.getHigh());
+        }
+    }
+
+    private int calculatePercentageChange(double previousClose, double currentClose) {
+        if (previousClose == 0) {
+            return 0; // Избегаем деления на ноль
+        }
+        return (int) ((currentClose - previousClose) / previousClose * 100);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+
+        int width = getWidth();
+        int height = getHeight();
+//        int candleWidth = Math.max(width / candlesticks.size() - 1, 1);
+        int candleWidth = Math.max((int) (minCandleWidth * scale), minCandleWidth);
+        // Отрисовка свечей
+        for (int i = 0; i < candlesticks.size(); i++) {
+            Candlestick candle = candlesticks.get(i);
+
+            int x = i * (candleWidth + 1);
+            int yHigh = (int) ((maxPrice - candle.getHigh()) / (maxPrice - minPrice) * height);
+            int yLow = (int) ((maxPrice - candle.getLow()) / (maxPrice - minPrice) * height);
+            int yOpen = (int) ((maxPrice - candle.getOpen()) / (maxPrice - minPrice) * height);
+            int yClose = (int) ((maxPrice - candle.getClose()) / (maxPrice - minPrice) * height);
+
+            Color color = candle.getClose() > candle.getOpen() ? Color.GREEN : Color.RED;
+            candle.setColor(color);
+            g2d.setColor(color);
+
+            g2d.fillRect(x, Math.min(yOpen, yClose), candleWidth, Math.abs(yClose - yOpen));
+            g2d.drawLine(x + candleWidth / 2, yHigh, x + candleWidth / 2, yLow);
+        }
+
+//        // Отрисовка полос Боллинджера
+//        g2d.setColor(Color.BLUE);
+//        for (int i = 0; i < candlesticks.size(); i++) {
+//            Double[] bands = bollingerBands.get(i);
+//            if (bands != null && bands[0] != null && bands[1] != null) {
+//                int x = i * (candleWidth + 1);
+//                int yUpperBand = (int) ((maxPrice - bands[0]) / (maxPrice - minPrice) * height);
+//                int yLowerBand = (int) ((maxPrice - bands[1]) / (maxPrice - minPrice) * height);
+//
+//                g2d.drawLine(x, yUpperBand, x + candleWidth, yUpperBand);
+//                g2d.drawLine(x, yLowerBand, x + candleWidth, yLowerBand);
+//            }
+//        }
+        // Отрисовка полос Боллинджера
+        g2d.setColor(Color.BLUE);
+        for (int i = 1; i < candlesticks.size(); i++) {
+            Double[] previousBands = bollingerBands.get(i - 1);
+            Double[] currentBands = bollingerBands.get(i);
+
+            if (previousBands != null && currentBands != null && previousBands[0] != null && currentBands[0] != null) {
+                int x1 = (i - 1) * (candleWidth + 1);
+                int y1Upper = (int) ((maxPrice - previousBands[0]) / (maxPrice - minPrice) * height);
+                int y1Lower = (int) ((maxPrice - previousBands[1]) / (maxPrice - minPrice) * height);
+
+                int x2 = i * (candleWidth + 1);
+                int y2Upper = (int) ((maxPrice - currentBands[0]) / (maxPrice - minPrice) * height);
+                int y2Lower = (int) ((maxPrice - currentBands[1]) / (maxPrice - minPrice) * height);
+
+                // Рисуем непрерывные линии для верхней и нижней полос Боллинджера
+                g2d.drawLine(x1, y1Upper, x2, y2Upper);
+                g2d.drawLine(x1, y1Lower, x2, y2Lower);
+            }
+        }
+
+        // Отрисовка линии SMA
+        g2d.setColor(Color.BLACK);
+        for (int i = 1; i < candlesticks.size(); i++) {
+            if (smaValues.get(i) != null && smaValues.get(i - 1) != null) {
+                int x1 = (i - 1) * (candleWidth + 1);
+                int y1 = (int) ((maxPrice - smaValues.get(i - 1)) / (maxPrice - minPrice) * height);
+                int x2 = i * (candleWidth + 1);
+                int y2 = (int) ((maxPrice - smaValues.get(i)) / (maxPrice - minPrice) * height);
+                g2d.drawLine(x1, y1, x2, y2);
+            }
+        }
+
+
+        // Отрисовка процентных изменений
+        for (int i = 1; i < candlesticks.size(); i++) {
+            Candlestick currentCandle = candlesticks.get(i);
+            int percentageChange = calculatePercentageChange(candlesticks.get(i - 1).getClose(), currentCandle.getClose());
+            int x = i * (candleWidth + 1);
+            int y = (int) ((maxPrice - currentCandle.getClose()) / (maxPrice - minPrice) * getHeight());
+
+            // Выбираем контрастный цвет для процентов, исходя из цвета свечи
+            Color textColor = currentCandle.getClose() > currentCandle.getOpen() ? Color.GREEN : Color.BLUE;
+            g2d.setColor(textColor);
+
+            // Создаем текст с процентами
+            String percentageText = percentageChange + "%";
+            int textWidth = g2d.getFontMetrics().stringWidth(percentageText);
+            int textHeight = g2d.getFontMetrics().getHeight();
+
+            // Располагаем текст так, чтобы он не перекрывал тело свечи
+            int yOffset = currentCandle.getClose() > currentCandle.getOpen() ? -textHeight - 2 : textHeight + 2;
+            g2d.drawString(percentageText, x, y + yOffset);
+
+
+            // Расчет и отображение дополнительного процентного изменения относительно средней линии Боллинджера
+//            if (Math.abs(percentageChange) > 10 && smaValues.size() > i) {
+            if (i == smaValues.size()-2) { // работаем с предпоследней свечей(последняя сформировавщиеся)
+
+
+                testConsole(smaValues.size()-1); //вывод в консоль - последней сформировавщейся свечи, и последней несвормировавщейся
+
+
+                Double smaValue = smaValues.get(i-1); // Значение SMA для текущей(предпоследней- посленей сформировавщейся) свечи
+
+                if (smaValue != null) {
+                    double bollingerPercentageChange = calculatePercentageChange(smaValue, currentCandle.getClose());
+
+                    // Выбираем оранжевый цвет для текста
+                    g2d.setColor(Color.ORANGE);
+
+                    // Располагаем дополнительный текст на смещение в другую сторону
+                    int extraOffset = currentCandle.getClose() > currentCandle.getOpen() ? yOffset - 15 : yOffset + 15;
+                    g2d.drawString(String.format("%.1f%%", bollingerPercentageChange), x, y + extraOffset);
+
+                    analizerPatternOne.analizer(currentCandle,smaValue);
+
+                }
+            }
+        }
+    }
+
+    private void updatePreferredSize() {
+        int width = (int) (candlesticks.size() * (minCandleWidth * scale + 1));
+        int height = getHeight();
+        setPreferredSize(new Dimension(width, height));
+        revalidate(); // Важно: уведомить контейнер о изменении размера компонента
+    }
+
+
+    // Вывод информации о текущей свече в консоль на русском языке
+    public void testConsole(int i ){
+        // Вывод информации о текущей свече в консоль на русском языке
+        Candlestick currentCandle = candlesticks.get(i);
+        System.out.println("Свеча " + i + ": Открытие=" + currentCandle.getOpen() + ", Максимум=" + currentCandle.getHigh() +
+                ", Минимум=" + currentCandle.getLow() + ", Закрытие=" + currentCandle.getClose() +
+                ", Цвет=" + (currentCandle.getClose() > currentCandle.getOpen() ? "Зеленый" : "Красный")); // todo последняя свеча отображение не коректно - так как еще не зафиксированно
+
+        Candlestick currentCandlePrev = candlesticks.get(i-1); // предыдущая свеча
+        System.out.println("Свеча " + (i-1) + ": Открытие=" + currentCandlePrev.getOpen() + ", Максимум=" + currentCandlePrev.getHigh() +
+                ", Минимум=" + currentCandlePrev.getLow() + ", Закрытие=" + currentCandlePrev.getClose() +
+                ", Цвет=" + (currentCandlePrev.getClose() > currentCandlePrev.getOpen() ? "Зеленый" : "Красный"));
+    }
+
+}
+
+package org.example;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class CandlestickDataParser {
+
+    public static List<Candlestick> readCandlesticksFromFile(String fileName) {
+        List<Candlestick> candlesticks = new ArrayList<>();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+            String line = reader.readLine();
+            JSONArray jsonArray = new JSONArray(line);
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONArray candlestickData = jsonArray.getJSONArray(i);
+                long openTime = candlestickData.getLong(0);
+                double open = candlestickData.getDouble(1);
+                double high = candlestickData.getDouble(2);
+                double low = candlestickData.getDouble(3);
+                double close = candlestickData.getDouble(4);
+                // Пропускаем остальные данные, так как они нам не нужны для отображения
+
+                Candlestick candlestick = new Candlestick(openTime, open, high, low, close);
+                candlesticks.add(candlestick);
+            }
+        } catch (IOException | JSONException e) {
+            e.printStackTrace();
+        }
+
+        return candlesticks;
+    }
+}
+
+//package org.example.config;
+//
+//import org.springframework.context.annotation.Bean;
+//import org.springframework.context.annotation.Configuration;
+//import org.springframework.http.converter.HttpMessageConverter;
+//import org.springframework.http.converter.StringHttpMessageConverter;
+//import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+//import org.springframework.web.client.RestTemplate;
+//
+//import java.nio.charset.StandardCharsets;
+//import java.util.ArrayList;
+//import java.util.List;
+//
+//@Configuration
+//public class AppConfig {
+//
+//    @Bean
+//    public RestTemplate restTemplate() {
+//        RestTemplate restTemplate = new RestTemplate();
+//
+//        // Добавление конвертеров
+//        List<HttpMessageConverter<?>> converters = new ArrayList<>();
+//
+//        // Для поддержки JSON
+//        converters.add(new MappingJackson2HttpMessageConverter());
+//
+//        // Для поддержки текста (например, для отправки параметров в формате URL)
+//        StringHttpMessageConverter stringConverter = new StringHttpMessageConverter(StandardCharsets.UTF_8);
+//        converters.add(stringConverter);
+//
+//        restTemplate.setMessageConverters(converters);
+//
+//        return restTemplate;
+//    }
+//}
+
+package org.example.executor;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Scanner;
+
+public class BinanceDataFetcher {
+
+    public static void main(String[] args) {
+        // Параметры запроса
+//        String symbol = "ALPHAUSDT"; // Валютная пара: BTCUSDT, ETHUSDT, и т.д.
+        String symbol = "APTUSDT"; // Валютная пара: BTCUSDT, ETHUSDT, и т.д.
+        String interval = "4h"; // Интервал свечи: 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M
+        int limit = 400; // Количество свечей: 1-1500
+
+        // Выполняем запрос и получаем данные
+        String responseData = fetchCandlestickData(symbol, interval, limit);
+        // Если данные получены, записываем их в файл
+        if (responseData != null) {
+            writeDataToFile(symbol + ".txt", responseData); // тут формируеться же и имя докумета тхт
+        }
+    }
+
+    /**
+     * Запрашивает данные свечей с Binance API.
+     *
+     * @param symbol Валютная пара для получения данных.
+     * @param interval Интервал времени для каждой свечи.
+     * @param limit Количество запрашиваемых свечей.
+     * @return Строка с данными свечей в формате JSON или null при ошибке.
+     */
+    private static String fetchCandlestickData(String symbol, String interval, int limit) {
+        String urlString = "https://api.binance.com/api/v3/klines?symbol=" + symbol + "&interval=" + interval + "&limit=" + limit;
+
+        try {
+            URL url = new URL(urlString);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+
+            InputStream responseStream = connection.getInputStream();
+            Scanner scanner = new Scanner(responseStream, StandardCharsets.UTF_8.name());
+            String responseData = scanner.useDelimiter("\\A").next(); // Используем сканер для чтения входящего потока
+            scanner.close();
+
+            return responseData;
+        } catch (IOException e) {
+            System.err.println("Ошибка при получении данных: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Записывает строку данных в файл.
+     *
+     * @param fileName Имя файла, в который будет произведена запись.
+     * @param data Строка данных для записи.
+     */
+    private static void writeDataToFile(String fileName, String data) {
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
+            writer.write(data); // Записываем данные в файл
+            writer.close();
+            System.out.println("Данные успешно записаны в файл " + fileName);
+        } catch (IOException e) {
+            System.err.println("Ошибка при записи данных в файл: " + e.getMessage());
+        }
+    }
+}
+
+
+
+//    Ответ API Binance на запрос данных свечей (klines) включает следующую информацию для каждой свечи​​:
+//
+//        Open time: Время открытия свечи в миллисекундах с начала эпохи Unix.
+//        Open: Цена открытия.
+//        High: Максимальная цена за время свечи.
+//        Low: Минимальная цена за время свечи.
+//        Close (or latest price): Цена закрытия или последняя цена.
+//        Volume: Объем торгов за время свечи.
+//        Close time: Время закрытия свечи в миллисекундах с начала эпохи Unix.
+//        Base asset volume: Объем торгов основной валюты.
+//        Number of trades: Количество торгов.
+//        Taker buy volume: Объем покупок, совершенных по рыночной цене.
+//        Taker buy base asset volume: Объем покупок основной валюты, совершенных по рыночной цене.
+//        Ignore: Поле, которое можно игнорировать (обычно содержит значение "0").
+
+//
+//symbol=BTCUSDT: Это означает, что запрашиваются данные для валютной пары Bitcoin (BTC) и Tether (USDT).
+//
+//        interval=15m: Здесь указывается таймфрейм каждой свечи. 15m означает, что каждая свеча представляет собой данные за 15-минутный интервал.
+//
+//        limit=192: Этот параметр ограничивает количество возвращаемых свечей. В данном случае запрашивается 192 свечи. Если учитывать, что каждая свеча представляет 15 минут, то 192 * 15м дает вам данные за последние 48 часов (или 2 дня).
+package org.example;
+
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import java.util.List;
+
+public class Main {
+
+    public static void main(String[] args) {
+        String coin = "APTUSDT.txt";
+
+        Main app = new Main();
+        app.runApplication(coin);
+    }
+
+    private void runApplication(String coin) {
+        // Считываем данные свечей из файла
+        List<Candlestick> candlesticks = CandlestickDataParser.readCandlesticksFromFile(coin);
+
+        // Проверяем успешность загрузки данных
+        if (candlesticks == null || candlesticks.isEmpty()) {
+            System.out.println("Не удалось загрузить данные свечей.");
+            return;
+        }
+
+        // Вычисляем Bollinger Bands и SMA
+        int period = 21; // Используем рекомендуемый период Bollinger Bands
+        List<Double[]> bollingerBands = BollingerBandsCalculator.calculateBollingerBands(candlesticks, period);
+        List<Double> smaValues = BollingerBandsCalculator.calculateSMA(candlesticks, period);
+
+        // Создаем и настраиваем окно приложения
+        JFrame frame = createApplicationFrame(candlesticks, bollingerBands, smaValues);
+        frame.setVisible(true);
+    }
+
+    private JFrame createApplicationFrame(List<Candlestick> candlesticks, List<Double[]> bollingerBands, List<Double> smaValues) {
+        JFrame frame = new JFrame("Candlestick Chart with Bollinger Bands and SMA");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        CandlestickChart chart = new CandlestickChart(candlesticks, bollingerBands, smaValues);
+
+        // Создаем JScrollPane и добавляем в него CandlestickChart
+        JScrollPane scrollPane = new JScrollPane(chart);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        frame.add(scrollPane); // Добавляем JScrollPane в JFrame
+
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        return frame;
+    }
+}
+
+//package org.example;
+//
+//import javax.swing.JFrame;
+//import javax.swing.JScrollPane;
+//import java.util.ArrayList; // Импортируйте необходимые классы
+//import java.util.List;
+//
+//public class MainApplication {
+//
+//    public static void main(String[] args) {
+//        // Создаем окно
+//        JFrame frame = new JFrame("Candlestick Chart");
+//        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//        frame.setSize(800, 600); // Задаем размер окна
+//
+//        // Создаем диаграмму
+//        List<Candlestick> candlesticks = new ArrayList<>(); // Используйте ваши данные
+//        List<Double[]> bollingerBands = new ArrayList<>(); // Используйте ваши данные
+//        List<Double> smaValues = new ArrayList<>(); // Используйте ваши данные
+//        CandlestickChart chart = new CandlestickChart(candlesticks, bollingerBands, smaValues);
+//
+//        // Помещаем диаграмму в JScrollPane
+//        JScrollPane scrollPane = new JScrollPane(chart);
+//        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+//
+//        // Добавляем JScrollPane в окно
+//        frame.add(scrollPane);
+//        frame.setVisible(true); // Отображаем окно
+//    }
+//}
+
+package org.example.model;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class AccountInfo {
+    private Map<String, AssetBalance> balances;
+
+    public AccountInfo() {
+        this.balances = new HashMap<>();
+    }
+
+    public void addBalance(String asset, double free, double locked, double borrowed, double interest, double netAsset) {
+        AssetBalance balance = new AssetBalance(free, locked, borrowed, interest, netAsset);
+        balances.put(asset, balance);
+    }
+
+    public AssetBalance getAssetBalance(String asset) {
+        return balances.get(asset);
+    }
+}
+
+
+
+package org.example.model;
+
+public class AssetBalance {
+    private double free;
+    private double locked;
+    private double borrowed;
+    private double interest;
+    private double netAsset;
+
+    public AssetBalance(double free, double locked, double borrowed, double interest, double netAsset) {
+        this.free = free;
+        this.locked = locked;
+        this.borrowed = borrowed;
+        this.interest = interest;
+        this.netAsset = netAsset;
+    }
+
+    // Геттеры и сеттеры для новых полей
+    public double getFree() {
+        return free;
+    }
+
+    public double getLocked() {
+        return locked;
+    }
+
+    public double getBorrowed() {
+        return borrowed;
+    }
+
+    public double getInterest() {
+        return interest;
+    }
+
+    public double getNetAsset() {
+        return netAsset;
+    }
+
+    // Добавьте сеттеры, если они вам нужны
+    // ...
+
+
+}
+
+//package org.example.orders;
+//
+//import org.example.service.BinanceService;
+//
+//public class AdvancedOrderManager {
+//
+//    private final BinanceService binanceService;
+//
+//    public AdvancedOrderManager(BinanceService binanceService) {
+//        this.binanceService = binanceService;
+//    }
+//
+//    public void placeOrderWithStopLossAndTwoTakeProfits(String symbol, String side, String quantity,
+//                                                        double stopLossPrice, double firstTakeProfitPrice,
+//                                                        double secondTakeProfitPrice) {
+//        // 1. Открыть ордер по текущей рыночной цене
+//        Order mainOrder = new Order(symbol, side, "MARKET", "GTC", quantity, null);
+//        String mainOrderId = binanceService.createMarketOrder(mainOrder);
+//
+//        // 2. Установить OCO ордер для первого тейк-профита и стоп-лосса
+//        // Пример: половина колипочества для первого тейк-профита
+//        String halfQuantity = String.valueOf(Double.parseDouble(quantity) / 2);
+//        binanceService.createOCOOrder(symbol, side, halfQuantity, firstTakeProfitPrice, stopLossPrice);
+//
+//        // 3. Установить второй тейк-профит как отдельный лимитный ордер
+//        // Этот ордер активируется после выполнения первого тейк-профита
+//        binanceService.createLimitOrder(symbol, side, halfQuantity, secondTakeProfitPrice);
+//
+//        // Дополнительная логика для обновления стоп-лосса после достижения первого тейк-профита
+//        // и для мониторинга статуса ордеров может быть добавлена здесь
+//    }
+//}
+//
+////    OCO Ордера: Этот тип ордера позволяет установить одновременно два ордера (один на тейк-профит и один на стоп-лосс), при этом исполнение одного из них автоматически отменяет другой.
+package org.example.orders;
+
+
+
+import org.example.service.BinanceService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CreateOrder {
+
+    private final BinanceService binanceService; // Импортировать ваш сервис
+
+    @Autowired//todo нужен ли ?
+    public CreateOrder(BinanceService binanceService) {
+        this.binanceService = binanceService;
+    }
+
+    public void createMarketOrder(String symbol, String side, String quantity) {
+        binanceService.createMarketOrder(symbol, side, quantity);
+        // Логика для вызова API Binance и создания рыночного ордера
+    }
+
+    public void createLimitOrder(String symbol, String side, String quantity, String price) {
+//        binanceService.createLimitOrder(symbol, side, quantity, price);
+        // Логика для вызова API Binance и создания лимитного ордера
+    }
+}
+
+package org.example.orders;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import org.apache.commons.codec.binary.Hex;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Service
+public class LeverageManager {
+
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    @Value("${binance.api.key}")
+    private String apiKey;
+
+    @Value("${binance.api.secret}")
+    private String secretKey;
+
+    private static final String BASE_URL = "https://api.binance.com";
+
+    public String changeLeverage(String symbol, int leverage) {
+        String endpoint = "/sapi/v1/margin/leverage"; // Эндпойнт для изменения плеча на маржинальном рынке
+        Map<String, String> params = new HashMap<>();
+        params.put("symbol", symbol);
+        params.put("leverage", Integer.toString(leverage));
+        params.put("timestamp", String.valueOf(System.currentTimeMillis()));
+
+        String signature = createSignature(params, secretKey);
+        params.put("signature", signature);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-MBX-APIKEY", apiKey);
+        HttpEntity<Map<String, String>> entity = new HttpEntity<>(params, headers);
+
+        String url = BASE_URL + endpoint + "?" + createQueryString(params);
+        return restTemplate.postForObject(url, entity, String.class);
+    }
+
+    private String createSignature(Map<String, String> params, String secretKey) {
+        try {
+            String query = params.entrySet().stream()
+                    .map(entry -> entry.getKey() + "=" + entry.getValue())
+                    .collect(Collectors.joining("&"));
+            Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA256");
+            sha256_HMAC.init(secretKeySpec);
+            return Hex.encodeHexString(sha256_HMAC.doFinal(query.getBytes()));
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to sign the request", e);
+        }
+    }
+
+    private String createQueryString(Map<String, String> params) {
+        return params.entrySet().stream()
+                .map(entry -> {
+                    try {
+                        return entry.getKey() + "=" + URLEncoder.encode(entry.getValue(), "UTF-8");
+                    } catch (UnsupportedEncodingException e) {
+                        throw new RuntimeException("Unable to encode the URL", e);
+                    }
+                })
+                .collect(Collectors.joining("&"));
+    }
+}
+//    createSignature метод генерирует подпись, используя ваш секретный ключ и параметры запроса.
+//        createQueryString метод создает URL-кодированную строку запроса из переданных параметров.
+//        В конструктор HttpEntity передается карта параметров и заголовки, включая подписанные параметры.
+package org.example.orders;
+
+
+
+// ... другие импорты ...
+
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
+import java.util.Map;
+
+@Component
+@Scope("prototype")
+public class MarginOrder extends Order { // Наследуем от вашего базового класса Order
+    private Integer leverage; // Плечо для маржинальной торговли
+
+    // Конструктор
+    public MarginOrder(String symbol, String side, String type, String timeInForce, String quantity, String price, Integer leverage) {
+        super(symbol, side, type, timeInForce, quantity, price);
+        this.leverage = leverage;
+    }
+
+    // Геттер и сеттер для leverage
+    public Integer getLeverage() {
+        return leverage;
+    }
+
+    public void setLeverage(Integer leverage) {
+        this.leverage = leverage;
+    }
+
+    // Переопределяем метод toParams для добавления параметра leverage
+    @Override
+    public Map<String, String> toParams() {
+        Map<String, String> params = super.toParams();
+        if (leverage != null) {
+            params.put("leverage", leverage.toString());
+        }
+        // Добавьте другие специфичные для маржинальной торговли параметры
+        return params;
+    }
+}
+
+
+package org.example.orders;
+
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Component
+@Scope("prototype")
+public class Order {
+    private String symbol;          // Символ валютной пары (например, "BTCUSDT")
+    private String side;            // Сторона ордера (BUY или SELL)
+    private String type;            // Тип ордера (MARKET, LIMIT и т.д.)
+    private String timeInForce;     // Время действия ордера (например, "GTC" для Good Till Cancelled)
+    private String quantity;        // Количество
+    private String price;           // Цена (для лимитных ордеров)
+    private Long timestamp;         // Временная метка создания ордера
+
+    // Конструкторы, геттеры и сеттеры
+    public Order() {
+    }
+
+    // Конструктор с параметрами
+    public Order(String symbol, String side, String type, String timeInForce, String quantity, String price) {
+        this.symbol = symbol;
+        this.side = side;
+        this.type = type;
+        this.timeInForce = timeInForce;
+        this.quantity = quantity;
+        this.price = price;
+        this.timestamp = System.currentTimeMillis(); // Устанавливаем текущее время
+    }
+
+    // Геттеры и сеттеры
+    // ...
+
+    // Методы для формирования параметров запроса
+    public Map<String, String> toParams() {
+        Map<String, String> params = new HashMap<>();
+        params.put("symbol", symbol);
+        params.put("side", side);
+        params.put("type", type);
+        params.put("timeInForce", timeInForce);
+        params.put("quantity", quantity);
+        params.put("price", price);
+        params.put("timestamp", timestamp.toString());
+        // Добавить другие необходимые параметры
+        return params;
+    }
+}
+
+
+
+
+
+//        symbol (Символ валютной пары):
+//
+//        Это идентификатор торговой пары на бирже. Например, "BTCUSDT" означает торговлю между Bitcoin и USDT (Tether). Этот параметр указывает, какие валюты участвуют в ордере.
+//        side (Сторона ордера):
+//
+//        Определяет, является ли ордер покупкой или продажей. "BUY" означает, что вы покупаете базовую валюту пары, а "SELL" - что вы продаете ее.
+//        type (Тип ордера):
+//
+//        Указывает тип ордера. Существуют различные типы, включая "MARKET" (рыночный ордер, исполняется по текущей рыночной цене) и "LIMIT" (лимитный ордер, исполняется только по указанной цене или лучше).
+//        timeInForce (Время действия ордера):
+//
+//        Этот параметр определяет, как долго ордер будет активен до его исполнения или отмены. Например, "GTC" (Good Till Cancelled) означает, что ордер будет оставаться активным, пока не будет исполнен или отменен пользователем.
+//        quantity (Количество):
+//
+//        Количество валюты, которое вы хотите купить или продать. В случае ордера "BUY" это количество покупаемой валюты, а в случае "SELL" - продаваемой.
+//        price (Цена):
+//
+//        Этот параметр используется для лимитных ордеров и указывает цену, по которой вы хотите купить или продать валюту. Для рыночных ордеров этот параметр обычно не задается, так как исполнение происходит по текущей рыночной цене.
+//        timestamp (Временная метка создания ордера):
+//
+//        Временная метка в миллисекундах, показывающая, когда ордер был создан. Это важно для подписанных запросов в API Binance, где требуется отметка времени для валидации запроса.
+package org.example.orders;
+
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Component
+public class Orders {
+
+    List<Order> orderList;
+    public Orders() {
+        this.orderList = new ArrayList<>();
+    }
+
+
+    public List<Order> getOrderList() {
+        return orderList;
+    }
+
+    public void addOrder(Order order) {
+       orderList.add(order);
+    }
+}
+
+package org.example.processor;
+
+public class AnalizerCloseOrder {
+
+
+
+    public void closedAnalizer(){
+
+    }
+
+}
+
+package org.example.processor;
+
+import org.example.Candlestick;
+
+import org.springframework.beans.factory.annotation.Value;
+
+import java.awt.*;
+
+public class AnalizerPatternOne {
+
+    @Value("${tailToBodyRatio}")
+  private   double tailToBodyRatio;
+
+    @Value("${procentSmaLine}")
+  private   double procentSmaLine;
+
+
+// todo добавить проверку на доджик - сильно малекре тело свечи
+    public void analizer (Candlestick candlestick, double sma){
+
+ double differenceBody = candlestick.getColor() == Color.GREEN ? candlestick.getClose() - candlestick.getOpen() : candlestick.getOpen() - candlestick.getClose(); // числовое значение тела свечи (модуль без знака)
+ double differenceTail = candlestick.getColor() == Color.GREEN ?  candlestick.getHigh() - candlestick.getClose() : candlestick.getHigh() - candlestick.getOpen();  // числовое значение верхнего хвоста  свечи (модуль без знака)
+
+      if( differenceTail/differenceBody > tailToBodyRatio && sma > procentSmaLine){
+          System.out.println("Ставим ");
+      }
+      else{
+          System.out.println("Не ставим "); //Todo убрать потом
+      }
+
+    }
+
+
+
+
+}
+
+package org.example.service;
+
+import org.example.model.AccountInfo;
+import org.example.model.AssetBalance;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import org.apache.commons.codec.binary.Hex;
+import java.util.HashMap;
+import java.util.Map;
+
+@Service
+public class BinanceService {
+
+    private final RestTemplate restTemplate;
+
+    @Autowired
+    public BinanceService(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
+    public BinanceService(RestTemplate restTemplate, String apiKey, String secretKey) {
+        this.restTemplate = restTemplate;
+        this.apiKey = apiKey;
+        this.secretKey = secretKey;
+    }
+
+    @Value("${binance.api.key}")
+    private String apiKey;
+
+    @Value("${binance.api.secret}")
+    private String secretKey;
+
+    private static final String BASE_URL = "https://api.binance.com";
+
+    public String createMarketOrder(String symbol, String side, String quantity) {
+        String endpoint = "/sapi/v1/margin/order"; // Используем конечную точку для //todo маржинальных ордеров
+        Map<String, String> params = new HashMap<>();
+        params.put("symbol", symbol); // Пара для торговли, например ACHUSDT
+        params.put("side", side); // Сторона ордера: "BUY" для покупки, "SELL" для продажи
+        params.put("type", "MARKET"); // Тип ордера: "MARKET" для рыночного ордера
+        params.put("quantity", quantity); // Количество для покупки
+        // Добавляем дополнительные параметры для маржинальных ордеров
+        params.put("isIsolated", "FALSE"); // Устанавливаем в "FALSE" для кросс-маржи
+        params.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        // ...существующий код для создания подписи и отправки запроса...
+
+
+        return sendSignedRequest(endpoint, params);
+    }
+
+    public String createLimitOrder(String symbol, String side, String quantity, String price) {
+        String endpoint = "/api/v3/order";
+        Map<String, String> params = new HashMap<>();
+        params.put("symbol", symbol);
+        params.put("side", side);
+        params.put("type", "LIMIT");
+        params.put("quantity", quantity);
+        params.put("price", price);
+        params.put("timeInForce", "GTC");
+        params.put("timestamp", String.valueOf(System.currentTimeMillis()));
+
+        return sendSignedRequest(endpoint, params);
+    }
+
+    public String createStopLossOrder(String symbol, String side, String quantity, String stopPrice) {
+        String endpoint = "/api/v3/order";
+        Map<String, String> params = new HashMap<>();
+        params.put("symbol", symbol);
+        params.put("side", side);
+        params.put("type", "STOP_LOSS_LIMIT");
+        params.put("quantity", quantity);
+        params.put("stopPrice", stopPrice);
+        params.put("price", stopPrice); // Set the limit price equal to the stop price for simplicity
+        params.put("timeInForce", "GTC");
+        params.put("timestamp", String.valueOf(System.currentTimeMillis()));
+
+        return sendSignedRequest(endpoint, params);
+    }
+
+    public String createTakeProfitOrder(String symbol, String side, String quantity, String stopPrice, String limitPrice) {
+        String endpoint = "/api/v3/order";
+        Map<String, String> params = new HashMap<>();
+        params.put("symbol", symbol);
+        params.put("side", side);
+        params.put("type", "TAKE_PROFIT_LIMIT");
+        params.put("quantity", quantity);
+        params.put("stopPrice", stopPrice);
+        params.put("price", limitPrice);
+        params.put("timeInForce", "GTC");
+        params.put("timestamp", String.valueOf(System.currentTimeMillis()));
+
+        return sendSignedRequest(endpoint, params);
+    }
+
+//    private String sendSignedRequest(String endpoint, Map<String, String> params) {
+//        String signature = generateSignature(params);
+//        params.put("signature", signature);
+//
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.set("X-MBX-APIKEY", apiKey);
+//        HttpEntity<Map<String, String>> entity = new HttpEntity<>(params, headers);
+//
+//        String url = BASE_URL + endpoint + "?" + toQueryString(params);
+//        return restTemplate.postForObject(url, entity, String.class);
+//    }
+private String sendSignedRequest(String endpoint, Map<String, String> params) { //post
+    String signature = generateSignature(params);
+    params.put("signature", signature);
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("X-MBX-APIKEY", apiKey);
+
+    // Создаем пустую HttpEntity с заголовками, без тела
+    HttpEntity<?> entity = new HttpEntity<>(headers);
+
+    // Включаем параметры в URL
+    String url = BASE_URL + endpoint + "?" + toQueryString(params);
+
+    // Используем exchange вместо postForObject для большей гибкости
+    ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+
+    return response.getBody();
+}
+
+
+    private String generateSignature(Map<String, String> params) {
+        String queryString = toQueryString(params);
+        try {
+            Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA256");
+            sha256_HMAC.init(secretKeySpec);
+            return Hex.encodeHexString(sha256_HMAC.doFinal(queryString.getBytes()));
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to sign message.", e);
+        }
+    }
+
+    private String toQueryString(Map<String, String> params) {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            sb.append(entry.getKey()).append("=").append(entry.getValue()).append("&");
+        }
+        sb.setLength(sb.length() - 1); // Remove the trailing "&"
+        return sb.toString();
+    }
+
+//    public String changeLeverage(String symbol, int leverage) {
+//        // ...существующий код...
+//    }
+    //todo ниже сервис по инфо
+
+    private String sendSignedGetRequest(String endpoint, Map<String, String> params) {
+        String signature = generateSignature(params);
+        params.put("signature", signature);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-MBX-APIKEY", apiKey);
+
+        HttpEntity<?> entity = new HttpEntity<>(headers);
+        String url = BASE_URL + endpoint + "?" + toQueryString(params);
+
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+        return response.getBody();
+    }
+
+//    public AccountInfo getAccountInfo() {
+//        String endpoint = "/api/v3/account";
+//        Map<String, String> params = new HashMap<>();
+//        params.put("timestamp", String.valueOf(System.currentTimeMillis()));
+//
+//        String response = sendSignedGetRequest(endpoint, params);
+//        System.out.println(response + "00000000000000000000000101010101");
+//        return parseAccountInfo(response);
+//    }
+public AccountInfo getAccountInfo() {
+    // Измените конечную точку на конечную точку маржинального аккаунта
+    String endpoint = "/sapi/v1/margin/account";
+    Map<String, String> params = new HashMap<>();
+    params.put("timestamp", String.valueOf(System.currentTimeMillis()));
+
+    String response = sendSignedGetRequest(endpoint, params);
+    System.out.println(response + "00000000000000000000000101010101");
+    return parseAccountInfo(response);
+}
+
+
+    private AccountInfo parseAccountInfo(String jsonResponse) {
+        AccountInfo accountInfo = new AccountInfo();
+        JSONObject json = new JSONObject(jsonResponse);
+        JSONArray userAssetsArray = json.getJSONArray("userAssets");
+
+        for (int i = 0; i < userAssetsArray.length(); i++) {
+            JSONObject userAsset = userAssetsArray.getJSONObject(i);
+            String asset = userAsset.getString("asset");
+            double free = userAsset.getDouble("free");
+            double locked = userAsset.getDouble("locked");
+            double borrowed = userAsset.getDouble("borrowed");
+            double interest = userAsset.getDouble("interest");
+            double netAsset = userAsset.getDouble("netAsset");
+            // Теперь вы можете добавить информацию о каждом активе в ваш AccountInfo объект
+//            accountInfo.addBalance(asset, new AssetBalance(free, locked, borrowed, interest, netAsset));
+            // В методе parseAccountInfo в классе, где вы анализируете JSON-ответ
+            accountInfo.addBalance(asset, free, locked, borrowed, interest, netAsset);
+
+        }
+
+        return accountInfo;
+    }
+
+
+    public String createMarketOrderFull(String symbol, String side, Double quoteOrderQty) {
+        String endpoint = "/sapi/v1/margin/order";
+        Map<String, String> params = new HashMap<>();
+        params.put("symbol", symbol);
+        params.put("side", side);
+        params.put("type", "MARKET");
+        // Не устанавливайте 'quantity', когда установлен 'quoteOrderQty'
+        if (quoteOrderQty != null) {
+            params.put("quoteOrderQty", String.valueOf(quoteOrderQty));
+        }
+        params.put("isIsolated", "FALSE"); // Установите значение "FALSE" для кросс-маржи
+        params.put("timestamp", String.valueOf(System.currentTimeMillis()));
+
+        // Подпись запроса
+        String signature = generateSignature(params);
+        params.put("signature", signature);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-MBX-APIKEY", apiKey);
+
+        // Создаем пустую HttpEntity с заголовками
+        HttpEntity<?> entity = new HttpEntity<>(headers);
+
+        // Включаем параметры в URL
+        String url = BASE_URL + endpoint + "?" + toQueryString(params);
+
+        // Отправка запроса
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);
+
+        return response.getBody();
+    }
+
+    //webSocet
+    public String startUserDataStream() {
+        String url = BASE_URL + "/api/v1/userDataStream";
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-MBX-APIKEY", apiKey);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+        JSONObject jsonObject = new JSONObject(response.getBody());
+        return jsonObject.getString("listenKey");
+    }
+    public void keepAliveUserDataStream(String listenKey) {
+        String url = BASE_URL + "/api/v1/userDataStream?listenKey=" + listenKey;
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-MBX-APIKEY", apiKey);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        restTemplate.exchange(url, HttpMethod.PUT, entity, String.class);
+    }
+
+}
+
+package org.example.test;
+
+import org.springframework.web.client.RestTemplate;
+import java.util.List;
+import java.util.Map;
+
+public class BinanceExchangeInfoTest {
+
+    public static void main(String[] args) {
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "https://api.binance.com/api/v1/exchangeInfo";
+
+        try {
+            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+
+            // Логирование всего ответа для проверки
+            System.out.println(response);
+
+            List<Map<String, Object>> symbols = (List<Map<String, Object>>) response.get("symbols");
+            for (Map<String, Object> symbolInfo : symbols) {
+                if ("ACHUSDT".equals(symbolInfo.get("symbol"))) {
+                    System.out.println("Symbol: " + symbolInfo.get("symbol"));
+                    System.out.println("Price Precision: " + symbolInfo.get("pricePrecision"));
+                    System.out.println("Quantity Precision: " + symbolInfo.get("quantityPrecision"));
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+package org.example.test;
+
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.ResponseEntity;
+import java.util.Map;
+
+public class BinanceTimeTest {
+
+    public static void main(String[] args) {
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "https://api.binance.com/api/v1/time";
+
+        try {
+            // Отправка GET-запроса к Binance для получения времени сервера
+            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+            Map<String, Long> responseBody = response.getBody();
+
+            // Вывод времени сервера
+            System.out.println("Server Time (Binance): " + responseBody.get("serverTime"));
+
+            // Вывод текущего времени системы
+            long currentTime = System.currentTimeMillis();
+            System.out.println("Current System Time: " + currentTime);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+//563  у меня меньше
+package org.example.test;
+
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
+public class GetPublicIP {
+
+    public static void main(String[] args) {
+        String ipServiceUrl = "http://httpbin.org/ip";
+        try {
+            URL url = new URL(ipServiceUrl);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuffer content = new StringBuffer();
+            while ((inputLine = in.readLine()) != null) {
+                content.append(inputLine);
+            }
+            in.close();
+            con.disconnect();
+
+            System.out.println("Your public IP: " + content.toString());
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+}
+
+package org.example.test;
+
+
+import org.example.service.BinanceService;
+import org.springframework.web.client.RestTemplate;
+
+//todo ACHUSDT
+public class TradingTestNoPlechoBuy {
+
+    // Сервис для создания ордеров
+
+
+    public static void main(String[] args) {
+// Сервис для управления плечом
+
+        RestTemplate restTemplate = new RestTemplate();
+        String apiKey = "geAebd1x7d2xankftODNx5ByHi7m0hS4s7ailwtozPL2OG78CpyDExNfWDaQX4lf";  // Замените на ваш фактический ключ API
+        String secretKey = "iAlGXXBHhP7NiwKpgiNJ3zGEjmvIB006V9FrkrjkGbnKhTFpIhxCaPsNdaix4Ue3";  // Замените на ваш фактический секретный ключ
+
+        BinanceService binanceService = new BinanceService(restTemplate, apiKey, secretKey);
+
+            // ...существующий код настройки...
+
+            // Устанавливаем плечо в 1 для кросс-маржинальной торговли (без плеча)
+//            String leverageResult = binanceService.changeLeverage("ACHUSDT", 1);
+//            System.out.println("Результат изменения плеча: " + leverageResult);
+
+            // Предполагаем, что у вас есть метод для получения текущей рыночной цены, рассчитываем количество на 11 USDT
+            double marketPrice = getCurrentMarketPrice("ACHUSDT");
+            String quantity = calculateQuantity(11.00, marketPrice);
+
+            // Создаем рыночный ордер на рассчитанное количество
+            String marketOrderResult = binanceService.createMarketOrder("ACHUSDT", "BUY", quantity);
+            System.out.println("Результат рыночного ордера: " + marketOrderResult);
+
+            // ...существующий код...
+        }
+
+// Метод для получения текущей рыночной цены (вам нужно реализовать этот метод)
+        public static double getCurrentMarketPrice(String symbol) {
+            // Реализуйте вызов API для получения текущей рыночной цены
+            return 0.02291000; // Заполнитель
+        }
+
+// Метод для расчета количества, которое можно купить на заданную сумму USDT
+//public static String calculateQuantity(double amount, double price, int precision) {
+//    double quantity = amount / price;
+//    // Заменяем запятую на точку
+//    String formattedQuantity = String.format(Locale.US, "%.8f", quantity);
+//    System.out.println(formattedQuantity);
+////    return formattedQuantity;
+//    return "466";
+//}
+public static String calculateQuantity(double amount, double price) {
+    double quantity = amount / price;
+    long roundedQuantity = Math.round(quantity); // Округляем до ближайшего целого числа
+    return String.valueOf(roundedQuantity);
+}
+}
+
+package org.example.test;
+
+import org.example.model.AccountInfo;
+import org.example.model.AssetBalance;
+import org.example.service.BinanceService;
+import org.springframework.web.client.RestTemplate;
+
+//public class TradingTestNoPlechoSell {
+//
+//    public static void main(String[] args) {
+//        RestTemplate restTemplate = new RestTemplate();
+//        String apiKey = "geAebd1x7d2xankftODNx5ByHi7m0hS4s7ailwtozPL2OG78CpyDExNfWDaQX4lf";  // Замените на ваш фактический ключ API
+//        String secretKey = "iAlGXXBHhP7NiwKpgiNJ3zGEjmvIB006V9FrkrjkGbnKhTFpIhxCaPsNdaix4Ue3";  // Замените на ваш фактический секретный ключ
+//
+//        BinanceService binanceService = new BinanceService(restTemplate, apiKey, secretKey);
+//
+//        // Получение информации о количестве ACH в портфеле
+////        double quantity = getHoldingQuantity("ACHUSDT", binanceService);
+//        double quantity = getHoldingQuantity("ACH", binanceService);
+//
+//        // Создание рыночного ордера на продажу всего количества ACH
+//        String marketOrderResult = binanceService.createMarketOrder("ACHUSDT", "SELL", String.valueOf(quantity));
+//        System.out.println("Результат рыночного ордера на продажу: " + marketOrderResult);
+//    }
+//
+//
+//    public static double getHoldingQuantity(String symbol, BinanceService binanceService) {
+//        System.out.println("Внутри getHoldingQuantity");
+//        // Получение информации о балансе аккаунта
+//        AccountInfo accountInfo = binanceService.getAccountInfo();
+//
+//        // Получение баланса для конкретного актива
+//        AssetBalance balance = accountInfo.getAssetBalance(symbol);
+//        if (balance != null) {
+//            // Получение свободного количества актива
+//            double freeAmount = balance.getFree();
+//            System.out.println(freeAmount + "------------");
+////            return freeAmount;
+//            return (int)freeAmount;
+//        } else {
+//            // Если актив не найден, верните 0 или выбросите исключение
+//            System.out.println("Актив не найден: " + symbol);
+//            return 0;
+//        }
+//    }
+//
+//}
+
+
+public class TradingTestNoPlechoSell {
+
+    public static void main(String[] args) {
+        RestTemplate restTemplate = new RestTemplate();
+        String apiKey = "geAebd1x7d2xankftODNx5ByHi7m0hS4s7ailwtozPL2OG78CpyDExNfWDaQX4lf";  // Замените на ваш фактический ключ API
+        String secretKey = "iAlGXXBHhP7NiwKpgiNJ3zGEjmvIB006V9FrkrjkGbnKhTFpIhxCaPsNdaix4Ue3";  // Замените на ваш фактический секретный ключ
+
+        BinanceService binanceService = new BinanceService(restTemplate, apiKey, secretKey);
+
+        // Получение текущего количества ACH в портфеле
+        double quantity = getHoldingQuantity("ACH", binanceService);
+
+        // Проверка наличия актива в портфеле
+        if (quantity > 0) {
+            // Создание рыночного ордера на продажу всего количества ACH
+            String marketOrderResult = binanceService.createMarketOrderFull("ACHUSDT", "SELL", quantity);
+            System.out.println("Результат рыночного ордера на продажу: " + marketOrderResult);
+        } else {
+            System.out.println("Нет актива ACH в портфеле для продажи.");
+        }
+    }
+
+    public static double getHoldingQuantity(String symbol, BinanceService binanceService) {
+        // Получение информации о балансе аккаунта
+        AccountInfo accountInfo = binanceService.getAccountInfo();
+
+        // Получение баланса для конкретного актива
+        AssetBalance balance = accountInfo.getAssetBalance(symbol);
+        if (balance != null) {
+            // Получение свободного количества актива
+            return balance.getFree();
+        } else {
+            // Если актив не найден, верните 0 или выбросите исключение
+            System.out.println("Актив не найден: " + symbol);
+            return 0;
+        }
+    }
+}
+package org.example.util;
+
+
+
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class NameMoney {
+
+    public static void main(String[] args) throws IOException {
+        List<String> usdtPairs = getUSDTTradingPairs();
+        usdtPairs.forEach(System.out::println);
+    }
+
+    public static List<String> getUSDTTradingPairs() throws IOException {
+        List<String> usdtPairs = new ArrayList<>();
+
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            HttpGet request = new HttpGet("https://api.binance.com/api/v3/exchangeInfo");
+            String jsonResponse = EntityUtils.toString(httpClient.execute(request).getEntity());
+
+            JSONObject obj = new JSONObject(jsonResponse);
+            JSONArray symbols = obj.getJSONArray("symbols");
+
+            for (int i = 0; i < symbols.length(); i++) {
+                JSONObject symbol = symbols.getJSONObject(i);
+                String pairName = symbol.getString("symbol");
+                if (pairName.endsWith("USDT")) {
+                    usdtPairs.add(pairName);
+                }
+            }
+        }
+
+        return usdtPairs;
+    }
+}
+
+
+package org.example.visualizator;
+
+import save.example.Candlestick;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
+
+public class CandlestickChart extends JPanel {
+
+    private final List<Candlestick> candlesticks;
+    private double minPrice = Double.MAX_VALUE;
+    private double maxPrice = Double.MIN_VALUE;
+
+    public CandlestickChart(List<Candlestick> candlesticks) {
+        this.candlesticks = candlesticks;
+        calculatePriceRange();
+        setPreferredSize(new Dimension(800, 600));
+    }
+
+    private void calculatePriceRange() {
+        for (Candlestick candle : candlesticks) {
+            minPrice = Math.min(minPrice, candle.getLow());
+            maxPrice = Math.max(maxPrice, candle.getHigh());
+        }
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+
+        int width = getWidth();
+        int height = getHeight();
+        int candleWidth = Math.max(width / candlesticks.size() - 1, 1);
+
+        for (int i = 0; i < candlesticks.size(); i++) {
+            Candlestick candle = candlesticks.get(i);
+
+            int x = i * (candleWidth + 1);
+            int yHigh = (int) ((maxPrice - candle.getHigh()) / (maxPrice - minPrice) * height);
+            int yLow = (int) ((maxPrice - candle.getLow()) / (maxPrice - minPrice) * height);
+            int yOpen = (int) ((maxPrice - candle.getOpen()) / (maxPrice - minPrice) * height);
+            int yClose = (int) ((maxPrice - candle.getClose()) / (maxPrice - minPrice) * height);
+
+            Color color = candle.getClose() > candle.getOpen() ? Color.GREEN : Color.RED;
+            g2d.setColor(color);
+
+            // Рисуем тело свечи
+            g2d.fillRect(x, Math.min(yOpen, yClose), candleWidth, Math.abs(yClose - yOpen));
+            // Рисуем хвост свечи
+            g2d.drawLine(x + candleWidth / 2, yHigh, x + candleWidth / 2, yLow);
+        }
+    }
+
+
+
+
+
+}
+
+
+
+package org.example.visualizator;
+
+import org.example.BollingerBandsCalculator;
+import org.example.Candlestick;
+import org.example.CandlestickChart;
+import org.example.CandlestickDataParser;
+
+import javax.swing.*;
+import java.util.List;
+
+public class Main {
+
+    public static void main(String[] args) {
+        String coin = "APTUSDT.txt";
+
+        Main app = new Main();
+        app.runApplication(coin);
+    }
+
+    private void runApplication(String coin) {
+        // Считываем данные свечей из файла
+        List<Candlestick> candlesticks = CandlestickDataParser.readCandlesticksFromFile(coin);
+
+        // Проверяем успешность загрузки данных
+        if (candlesticks == null || candlesticks.isEmpty()) {
+            System.out.println("Не удалось загрузить данные свечей.");
+            return;
+        }
+
+        // Вычисляем Bollinger Bands и SMA
+        int period = 21; // Используем рекомендуемый период Bollinger Bands
+        List<Double[]> bollingerBands = BollingerBandsCalculator.calculateBollingerBands(candlesticks, period);
+        List<Double> smaValues = BollingerBandsCalculator.calculateSMA(candlesticks, period);
+
+        // Создаем и настраиваем окно приложения
+        JFrame frame = createApplicationFrame(candlesticks, bollingerBands, smaValues);
+        frame.setVisible(true);
+    }
+
+    private JFrame createApplicationFrame(List<Candlestick> candlesticks, List<Double[]> bollingerBands, List<Double> smaValues) {
+        JFrame frame = new JFrame("Candlestick Chart with Bollinger Bands and SMA");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        CandlestickChart chart = new CandlestickChart(candlesticks, bollingerBands, smaValues);
+
+        // Создаем JScrollPane и добавляем в него CandlestickChart
+        JScrollPane scrollPane = new JScrollPane(chart);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        frame.add(scrollPane); // Добавляем JScrollPane в JFrame
+
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        return frame;
+    }
+}
+
+package org.example.websocet;
+
+import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.handshake.ServerHandshake;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+
+public class BinanceWebSocketClient extends WebSocketClient {
+
+    public BinanceWebSocketClient(URI serverUri) {
+        super(serverUri);
+    }
+
+    @Override
+    public void onOpen(ServerHandshake handshakedata) {
+        System.out.println("Connected");
+        // Подписка на потоки
+        String message = "{\"method\": \"SUBSCRIBE\", \"params\": [\"btcusdt@aggTrade\", \"btcusdt@depth\"], \"id\": 1}";
+        send(message);
+    }
+
+    @Override
+    public void onMessage(String message) {
+        System.out.println("Received: " + message);
+        // Обработайте здесь входящие сообщения
+    }
+
+    @Override
+    public void onClose(int code, String reason, boolean remote) {
+        System.out.println("Disconnected");
+    }
+
+    @Override
+    public void onError(Exception ex) {
+        ex.printStackTrace();
+    }
+
+    public static void main(String[] args) throws URISyntaxException {
+        BinanceWebSocketClientMonitorAkk client = new BinanceWebSocketClientMonitorAkk(new URI("wss://stream.binance.com:9443/ws/bnbbtc@depth"));
+        client.connect();
+    }
+}
+
+package org.example.websocet;
+
+import org.example.service.BinanceService;
+import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.handshake.ServerHandshake;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.springframework.web.client.RestTemplate;
+
+import java.net.URI;
+import java.nio.ByteBuffer;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+public class BinanceWebSocketClientMonitorAkk extends WebSocketClient {
+
+    public static void main(String[] args) {
+        String apiKey = "geAebd1x7d2xankftODNx5ByHi7m0hS4s7ailwtozPL2OG78CpyDExNfWDaQX4lf";
+        String secretKey = "iAlGXXBHhP7NiwKpgiNJ3zGEjmvIB006V9FrkrjkGbnKhTFpIhxCaPsNdaix4Ue3";
+
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            BinanceService binanceService = new BinanceService(restTemplate, apiKey, secretKey);
+
+            String listenKey = binanceService.startUserDataStream();
+            keepAliveListenKey(binanceService, listenKey);
+
+            BinanceWebSocketClientMonitorAkk client = new BinanceWebSocketClientMonitorAkk(new URI("wss://stream.binance.com:9443/ws/" + listenKey));
+            client.connect();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void keepAliveListenKey(BinanceService binanceService, String listenKey) {
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+        executor.scheduleAtFixedRate(() -> {
+            try {
+                binanceService.keepAliveUserDataStream(listenKey);
+                System.out.println("KeepAlive sent for listenKey");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, 0, 30, TimeUnit.MINUTES);
+    }
+
+    public BinanceWebSocketClientMonitorAkk(URI serverURI) {
+        super(serverURI);
+    }
+
+    @Override
+    public void onOpen(ServerHandshake handshakedata) {
+        System.out.println("WebSocket opened");
+    }
+
+    @Override
+    public void onMessage(String message) {
+        System.out.println("Received message: " + message);
+        try {
+            JSONObject json = new JSONObject(message);
+            String eventType = json.optString("e");
+            switch (eventType) {
+                case "executionReport":
+                    // Ваша логика обработки отчета о выполнении
+                    break;
+                case "balanceUpdate":
+                    // Ваша логика обработки обновления баланса
+                    break;
+                // Добавьте другие типы событий, если необходимо
+            }
+        } catch (JSONException e) {
+            System.out.println("Error parsing JSON: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void onClose(int code, String reason, boolean remote) {
+        System.out.println("WebSocket closed");
+    }
+
+    @Override
+    public void onError(Exception ex) {
+        ex.printStackTrace();
+    }
+
+//    @Override
+//    public void onPing(ByteBuffer bytes) {
+//        super.onPing(bytes);
+//        System.out.println("Received ping, sending pong...");
+//        try {
+//            this.sendPong(bytes);
+//        } catch (Exception e) {
+//            System.err.println("Error while sending pong: " + e.getMessage());
+//        }
+//    }
+//
+//    @Override
+//    public void onPong(ByteBuffer bytes) {
+//        System.out.println("Received pong response");
+//    }
+}
+
+package save.example;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class BollingerBandsCalculator {
+    public static List<Double> calculateSMA(List<Candlestick> candlesticks, int period) {
+        List<Double> sma = new ArrayList<>();
+        for (int i = 0; i < candlesticks.size(); i++) {
+            if (i < period - 1) {
+                sma.add(null);
+                continue;
+            }
+            double sum = 0;
+            for (int j = i; j > i - period; j--) {
+                sum += candlesticks.get(j).getClose();
+            }
+            sma.add(sum / period);
+        }
+        return sma;
+    }
+
+    public static List<Double[]> calculateBollingerBands(List<Candlestick> candlesticks, int period) {
+        List<Double> sma = calculateSMA(candlesticks, period);
+        List<Double[]> bands = new ArrayList<>();
+
+        for (int i = 0; i < candlesticks.size(); i++) {
+            if (i < period - 1) {
+                bands.add(new Double[]{null, null});
+                continue;
+            }
+            double sumOfSquares = 0;
+            for (int j = i; j > i - period; j--) {
+                sumOfSquares += Math.pow(candlesticks.get(j).getClose() - sma.get(i), 2);
+            }
+            double stddev = Math.sqrt(sumOfSquares / period);
+            bands.add(new Double[]{sma.get(i) + 2 * stddev, sma.get(i) - 2 * stddev});
+        }
+        return bands;
+    }
+}
+
+package save.example;
+
+public class Candlestick {
+    private final long openTime;
+    private final double open;
+    private final double high;
+    private final double low;
+    private final double close;
+
+    public Candlestick(long openTime, double open, double high, double low, double close) {
+        this.openTime = openTime;
+        this.open = open;
+        this.high = high;
+        this.low = low;
+        this.close = close;
+    }
+
+    // Геттеры для open, high, low, close
+
+    public long getOpenTime() {
+        return openTime;
+    }
+
+    public double getOpen() {
+        return open;
+    }
+
+    public double getHigh() {
+        return high;
+    }
+
+    public double getLow() {
+        return low;
+    }
+
+    public double getClose() {
+        return close;
+    }
+}
+
+package save.example;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
+
+public class CandlestickChart extends JPanel {
+
+    private final List<Candlestick> candlesticks;
+    private double minPrice = Double.MAX_VALUE;
+    private double maxPrice = Double.MIN_VALUE;
+
+    public CandlestickChart(List<Candlestick> candlesticks) {
+        this.candlesticks = candlesticks;
+        calculatePriceRange();
+        setPreferredSize(new Dimension(800, 600));
+    }
+
+    private void calculatePriceRange() {
+        for (Candlestick candle : candlesticks) {
+            minPrice = Math.min(minPrice, candle.getLow());
+            maxPrice = Math.max(maxPrice, candle.getHigh());
+        }
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+
+        int width = getWidth();
+        int height = getHeight();
+        int candleWidth = Math.max(width / candlesticks.size() - 1, 1);
+
+        for (int i = 0; i < candlesticks.size(); i++) {
+            Candlestick candle = candlesticks.get(i);
+
+            int x = i * (candleWidth + 1);
+            int yHigh = (int) ((maxPrice - candle.getHigh()) / (maxPrice - minPrice) * height);
+            int yLow = (int) ((maxPrice - candle.getLow()) / (maxPrice - minPrice) * height);
+            int yOpen = (int) ((maxPrice - candle.getOpen()) / (maxPrice - minPrice) * height);
+            int yClose = (int) ((maxPrice - candle.getClose()) / (maxPrice - minPrice) * height);
+
+            Color color = candle.getClose() > candle.getOpen() ? Color.GREEN : Color.RED;
+            g2d.setColor(color);
+
+            // Рисуем тело свечи
+            g2d.fillRect(x, Math.min(yOpen, yClose), candleWidth, Math.abs(yClose - yOpen));
+            // Рисуем хвост свечи
+            g2d.drawLine(x + candleWidth / 2, yHigh, x + candleWidth / 2, yLow);
+        }
+    }
+
+
+
+
+
+}
+
+
+
+package save.example;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class CandlestickDataParser {
+
+    public static List<Candlestick> readCandlesticksFromFile(String fileName) {
+        List<Candlestick> candlesticks = new ArrayList<>();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+            String line = reader.readLine();
+            JSONArray jsonArray = new JSONArray(line);
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONArray candlestickData = jsonArray.getJSONArray(i);
+                long openTime = candlestickData.getLong(0);
+                double open = candlestickData.getDouble(1);
+                double high = candlestickData.getDouble(2);
+                double low = candlestickData.getDouble(3);
+                double close = candlestickData.getDouble(4);
+                // Пропускаем остальные данные, так как они нам не нужны для отображения
+
+                Candlestick candlestick = new Candlestick(openTime, open, high, low, close);
+                candlesticks.add(candlestick);
+            }
+        } catch (IOException | JSONException e) {
+            e.printStackTrace();
+        }
+
+        return candlesticks;
+    }
+}
+
+package save.example;
+
+import javax.swing.*;
+import java.util.List;
+
+public class Main {
+
+    public static void main(String[] args) {
+        // Сначала читаем данные свечей из файла
+        List<Candlestick> candlesticks = CandlestickDataParser.readCandlesticksFromFile("binance_data.txt");
+
+        // Проверяем, что данные были успешно прочитаны
+        if (candlesticks == null || candlesticks.isEmpty()) {
+            System.out.println("Не удалось загрузить данные свечей.");
+            return;
+        }
+
+        // Создаем окно приложения и устанавливаем его параметры
+        JFrame frame = new JFrame("Candlestick Chart");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        // Создаем панель с графиком свечей и добавляем ее в окно
+        CandlestickChart chart = new CandlestickChart(candlesticks);
+        frame.add(chart);
+
+        // Упаковываем окно, устанавливаем его в центр экрана и делаем видимым
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+}
+
+

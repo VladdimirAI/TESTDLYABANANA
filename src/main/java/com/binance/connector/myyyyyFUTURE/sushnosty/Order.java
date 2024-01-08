@@ -60,7 +60,8 @@ public class Order {
     }
 
     public double getCummulativeQuoteQty() {
-        return cummulativeQuoteQty;
+//        return cummulativeQuoteQty; //todo ВОЗМОЖНО В ОРИГЕ НАДО ПОМЕНЯТЬ ТОЖЕ
+        return colichestvoCuplennuhMonet;
     }
 
     public void setCummulativeQuoteQty(double cummulativeQuoteQty) {
@@ -119,6 +120,24 @@ public class Order {
     @Override
     public int hashCode() {
         return Objects.hash(getSymbol(), getOrderId());
+    }
+
+
+    @Override
+    public String toString() {
+        return "Order{" +
+                "cenaVhoda=" + cenaVhoda +
+                ", symbol='" + symbol + '\'' +
+                ", orderId=" + orderId +
+                ", cummulativeQuoteQty=" + cummulativeQuoteQty +
+                ", executedQty=" + executedQty +
+                ", status='" + status + '\'' +
+                ", side='" + side + '\'' +
+                ", type='" + type + '\'' +
+                ", kakayaPoshetuSvecha=" + kakayaPoshetuSvecha +
+                ", colichestvoCuplennuhMonet=" + colichestvoCuplennuhMonet +
+                ", verhnyayPolovina=" + verhnyayPolovina +
+                '}';
     }
 }
 

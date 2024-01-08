@@ -2,6 +2,7 @@ package com.binance.connector.myyyyyFUTURE.processory;
 
 
 import com.binance.connector.myyyyyFUTURE.GURU;
+import com.binance.connector.myyyyyFUTURE.MYTEST.GURUTEST;
 import com.binance.connector.myyyyyFUTURE.sushnosty.Order;
 import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
 
@@ -17,7 +18,8 @@ public class ProcessorPerestonovkiSLiTP {
         Order newTPOrder = GURU.orderManager.creatMARKETrderTakeProfit(symbol, orderNaUdalenye.getCummulativeQuoteQty(), svecha.getSma()); //getCummulativeQuoteQty все верно ?
         newTPOrder.setCenaVhoda(svecha.getSma());
 
-        GURU.getTakeProfitOrders().put(symbol, newTPOrder);
+//        GURU.getTakeProfitOrders().put(symbol, newTPOrder);
+        GURUTEST.orderaNaServer.add(newTPOrder);
 
 
     }

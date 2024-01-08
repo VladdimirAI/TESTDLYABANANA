@@ -9,8 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SvechaParser {
-    public static List<Svecha> main() {
-        String pathToFile = "C:\\ИсторическиеДАнныеБИНАНС\\2\\ACHUSDT.txt";
+    public static List<Svecha> parsimZaGod(String symbol) {
+        String pathToFile = "C:\\ИсторическиеДАнныеБИНАНС\\2\\" + symbol + ".txt";
+
         List<Svecha> svechi = new ArrayList<>();
 
         try {
@@ -23,7 +24,7 @@ public class SvechaParser {
                 double low = Double.parseDouble(parts[3]);
                 double close = Double.parseDouble(parts[4]);
 
-                Svecha svecha = new Svecha("ACHUSDT", openTime, open, high, low, close);
+                Svecha svecha = new Svecha(symbol, openTime, open, high, low, close);
                 svechi.add(svecha);
             }
         } catch (IOException e) {

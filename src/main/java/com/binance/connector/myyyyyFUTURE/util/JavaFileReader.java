@@ -10,7 +10,7 @@ import java.nio.file.Paths;
 
 public class JavaFileReader {
     public static void main(String[] args) {
-        String startFolder = "C:\\BINACEFUTURE\\binance-futures-connector-java-main\\src\\main\\java\\com\\binance\\connector\\myyyyyFUTURE\\MYTEST"; // Укажите путь к начальной папке
+        String startFolder = "C:\\BINACEFUTURE\\binance-futures-connector-java-main\\src\\main\\java\\com\\binance\\connector\\myyyyyFUTURE"; // Укажите путь к начальной папке
 
         try {
             StringBuilder contentBuilder = new StringBuilder();
@@ -29,7 +29,7 @@ public class JavaFileReader {
             String allJavaCode = contentBuilder.toString();
 
             // Теперь можно записать содержимое в текстовый документ
-            try (PrintWriter writer = new PrintWriter("binance-futures-connectorTEST2.txt")) {
+            try (PrintWriter writer = new PrintWriter("binance-futures-connector3.txt")) {
                 writer.write(allJavaCode);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();

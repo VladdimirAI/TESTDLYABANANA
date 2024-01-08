@@ -2,6 +2,9 @@ package com.binance.connector.myyyyyFUTURE.sushnosty;
 
 
 import java.awt.*;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 public class Svecha {
 
@@ -103,6 +106,28 @@ public class Svecha {
 
     public void setDownBolinjer(double downBolinjer) {
         DownBolinjer = downBolinjer;
+    }
+
+
+    @Override
+    public String toString() {
+        return "Svecha{" +
+                "money='" + money + '\'' +
+                ", openTime= " + convertTimestampToDate(openTime) +
+                ", open=" + open +
+                ", high=" + high +
+                ", low=" + low +
+                ", close=" + close +
+                ", sma=" + sma +
+                ", color=" + color +
+                '}';
+    }
+
+    public static String convertTimestampToDate(long timestamp) {
+        Instant instant = Instant.ofEpochMilli(timestamp);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy время - HH:mm:ss")
+                .withZone(ZoneId.systemDefault());
+        return formatter.format(instant);
     }
 }
 

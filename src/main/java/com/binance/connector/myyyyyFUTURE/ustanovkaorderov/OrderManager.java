@@ -2,6 +2,7 @@ package com.binance.connector.myyyyyFUTURE.ustanovkaorderov;
 
 import com.binance.connector.futures.client.impl.UMFuturesClientImpl;
 import com.binance.connector.myyyyyFUTURE.GURU;
+import com.binance.connector.myyyyyFUTURE.MYTEST.GURUTEST;
 import com.binance.connector.myyyyyFUTURE.PrivateConfig;
 import com.binance.connector.myyyyyFUTURE.parsery.ParserOrderov;
 import com.binance.connector.myyyyyFUTURE.sushnosty.Order;
@@ -18,7 +19,7 @@ public class OrderManager {
     }
 
     public Order createMarketOrder(String symbol, String side, double quantity,boolean socrashat) { //"origType":"MARKET"//todo квенти был стриннгом - если будут неполадки сомтреть сюда
-    GURU.playSIGNAL();//todo играем музыку!!!!!!!!!!
+//    GURU.playSIGNAL();//todo играем музыку!!!!!!!!!!
 
         double ocruglenuyQuantitySuchetomMonety = GURU.ocruglitel(quantity, GURU.getMapPosleZapytoy().get(symbol).cifrPosleZapytoyDlyaLotaVoVTOROYMONETE);
 
@@ -32,12 +33,12 @@ public class OrderManager {
 
 
         // Вызов метода для создания ордера
-        String response = client.account().newOrder(parameters);
-        System.out.println("Market Order Response: " + response);
+//        String response = client.account().newOrder(parameters);
+//        System.out.println("Market Order Response: " + response);
 
-        Order order = ParserOrderov.parseOrder(response); //цену входа ставим в процессоре  в zahodVShellPoziciyu
+//        Order order = ParserOrderov.parseOrder(response); //цену входа ставим в процессоре  в zahodVShellPoziciyu
+        Order order = new Order(symbol, GURUTEST.generateOrderID(),0,0,"NEW",side,"MARKET");
         order.colichestvoCuplennuhMonet = ocruglenuyQuantitySuchetomMonety;
-
         return order;
 
     }
@@ -90,9 +91,12 @@ public class OrderManager {
             parameters.put("reduceOnly", true); // Установите этот параметр, если вы хотите, чтобы ордер выполнялся только как сокращение позиции
 
 
-            String response = client.account().newOrder(parameters);
-            System.out.println("Delayed Buy Order Response: " + response);
-            return ParserOrderov.parseOrder(response);
+//            String response = client.account().newOrder(parameters);
+//            System.out.println("Delayed Buy Order Response: " + response);
+//            return ParserOrderov.parseOrder(response);
+            Order order = new Order(symbol,GURUTEST.generateOrderID(),0,0,"NEW","BUY","TAKE_PROFIT_MARKET");
+            order.setColichestvoCuplennuhMonet(ocruglenuyQuantitySuchetomMonety);
+            return order;
         }
  //   Delayed Buy Order Response: {"orderId":948872562,"symbol":"ACHUSDT","status":"NEW","clientOrderId":"Amioe3kKbu1vpq9xFvuoKI","price":"0.0000000","avgPrice":"0.00","origQty":"158","executedQty":"0","cumQty":"0","cumQuote":"0.0000000","timeInForce":"GTC","type":"TAKE_PROFIT_MARKET","reduceOnly":true,"closePosition":false,"side":"BUY","positionSide":"BOTH","stopPrice":"0.0197100","workingType":"CONTRACT_PRICE","priceProtect":false,"origType":"TAKE_PROFIT_MARKET","priceMatch":"NONE","selfTradePreventionMode":"NONE","goodTillDate":0,"updateTime":1704448357952}
 
@@ -117,9 +121,12 @@ public class OrderManager {
         parameters.put("reduceOnly", true); // Установите этот параметр, если вы хотите, чтобы ордер выполнялся только как сокращение позиции
 
 
-        String response = client.account().newOrder(parameters);
-        System.out.println("Delayed Buy Order Response: " + response);
-        return ParserOrderov.parseOrder(response);
+//        String response = client.account().newOrder(parameters);
+//        System.out.println("Delayed Buy Order Response: " + response);
+//        return ParserOrderov.parseOrder(response);
+        Order order = new Order(symbol,GURUTEST.generateOrderID(),0,0,"NEW","BUY","STOP_MARKET");
+        order.setColichestvoCuplennuhMonet(ocruglenuyQuantitySuchetomMonety);
+        return order;
     }
   //      Delayed Buy Order Response: {"orderId":945483426,"symbol":"ACHUSDT","status":"NEW","clientOrderId":"yZy0YEixZA5ZnjoDXFkD79","price":"0.0000000","avgPrice":"0.00","origQty":"308","executedQty":"0","cumQty":"0","cumQuote":"0.0000000","timeInForce":"GTC","type":"STOP_MARKET","reduceOnly":false,"closePosition":false,"side":"BUY","positionSide":"BOTH","stopPrice":"0.0200000","workingType":"CONTRACT_PRICE","priceProtect":false,"origType":"STOP_MARKET","priceMatch":"NONE","selfTradePreventionMode":"NONE","goodTillDate":0,"updateTime":1704336377661}
 
@@ -129,8 +136,24 @@ public class OrderManager {
         parameters.put("symbol", symbol);
         parameters.put("orderId", orderId);
 
-        String response = client.account().cancelOrder(parameters);
-        System.out.println("Cancel Order Response: " + response);
+//        String response = client.account().cancelOrder(parameters);
+//        System.out.println("Cancel Order Response: " + response);
+        System.out.println("Это кенсел ордер");
+
+        if(GURUTEST.stopLossOrdersRClientom.containsKey(symbol)){
+            if(GURUTEST.stopLossOrdersRClientom.get(symbol).getOrderId() == orderId){
+                GURUTEST.stopLossOrdersRClientom.remove(symbol);
+            }
+
+        } else if (GURUTEST.takeProfitOrdersRClientom.containsKey(symbol)) {
+            if(GURUTEST.takeProfitOrdersRClientom.get(symbol).getOrderId() == orderId){
+                GURUTEST.takeProfitOrdersRClientom.remove(symbol);
+            }
+        }
+
+        System.out.println("Это кенсел ордер - готово");
+
+
     }
 //    Cancel Order Response: {"orderId":946916635,"symbol":"ACHUSDT","status":"CANCELED","clientOrderId":"VrFjrKhVtPgfcxgoRh5jsF","price":"0.0190000","avgPrice":"0.00","origQty":"309","executedQty":"0","cumQty":"0","cumQuote":"0.0000000","timeInForce":"GTC","type":"LIMIT","reduceOnly":false,"closePosition":false,"side":"BUY","positionSide":"BOTH","stopPrice":"0.0000000","workingType":"CONTRACT_PRICE","priceProtect":false,"origType":"LIMIT","priceMatch":"NONE","selfTradePreventionMode":"NONE","goodTillDate":0,"updateTime":1704382866522}
 

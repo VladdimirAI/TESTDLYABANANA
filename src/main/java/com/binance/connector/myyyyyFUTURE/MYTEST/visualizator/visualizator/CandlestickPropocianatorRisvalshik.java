@@ -21,7 +21,9 @@ public class CandlestickPropocianatorRisvalshik extends JPanel {
     private final int minCandleWidth = 1;
     private final int maxCandleWidth = 20;
 
-    public CandlestickPropocianatorRisvalshik(List<Svecha> candlesticks, List<Double[]> bollingerBands, List<Double> smaValues) {
+    private long highlightedOpenTime;
+
+    public CandlestickPropocianatorRisvalshik(List<Svecha> candlesticks, List<Double[]> bollingerBands, List<Double> smaValues,long openTime) {
         AnalizerPatternOne analizerPatternOne1 = new AnalizerPatternOne();
         this.analizerPatternOne = analizerPatternOne1;
         this.candlesticks = candlesticks;
@@ -29,6 +31,8 @@ public class CandlestickPropocianatorRisvalshik extends JPanel {
         this.smaValues = smaValues;
         calculatePriceRange();
         setPreferredSize(new Dimension(800, 600));
+
+
 
         addMouseWheelListener(e -> {
             if (e.getWheelRotation() < 0) {
@@ -41,6 +45,8 @@ public class CandlestickPropocianatorRisvalshik extends JPanel {
 
         });
 
+
+        this.highlightedOpenTime = openTime;
     }
 
     private void calculatePriceRange() {
@@ -177,7 +183,7 @@ public class CandlestickPropocianatorRisvalshik extends JPanel {
                     int extraOffset = currentCandle.getClose() > currentCandle.getOpen() ? yOffset - 15 : yOffset + 15;
                     g2d.drawString(String.format("%.1f%%", bollingerPercentageChange), x, y + extraOffset);
 
-                    analizerPatternOne.analizer(currentCandle,smaValue);
+//                    analizerPatternOne.analizer(currentCandle,smaValue);
 
                 }
             }
@@ -203,7 +209,45 @@ public class CandlestickPropocianatorRisvalshik extends JPanel {
         String label = String.format("%.2f", centralValue);
         g2d.drawString(label, 5, yLine - 2); // Расположение подписи рядом с линией
 
+        ///////
 
+        // Отрисовка метки для выделенной свечи
+        for (int i = 0; i < candlesticks.size(); i++) {
+            Svecha candle = candlesticks.get(i);
+            if (candle.getOpenTime() == highlightedOpenTime) {
+                drawHighlightedMark(g2d, i);
+            }
+        }
+    }
+//
+//    private void drawHighlightedMark(Graphics2D g2d, int index) {
+//        int candleWidth = Math.max((int) (minCandleWidth * scale), minCandleWidth);
+//        int x = index * (candleWidth + 1);
+//        int y = getHeight() - 20; // Высота, на которой будет стрелка
+//
+//        g2d.setColor(Color.PINK);
+//        g2d.fillPolygon(new int[]{x, x + 10, x - 10}, new int[]{y, y + 10, y + 10}, 3);
+        // Отрисовываем стрелку (треугольник) под свечой
+
+    private void drawHighlightedMark(Graphics2D g2d, int index) {
+        int candleWidth = Math.max((int) (minCandleWidth * scale), minCandleWidth);
+        Svecha candle = candlesticks.get(index);
+
+        int x = index * (candleWidth + 1) + candleWidth / 2; // Центр свечи по оси X
+        int y = (int) ((maxPrice - candle.getLow()) / (maxPrice - minPrice) * getHeight()); // Позиция низа свечи по оси Y
+
+        // Поднимаем стрелку чуть выше низа свечи
+        int arrowHeight = 10; // Высота стрелки
+        int offset = 5; // Дополнительное смещение от низа свечи
+        y = y - arrowHeight - offset;
+
+        g2d.setColor(Color.PINK);
+        g2d.fillPolygon(new int[]{x, x + 5, x - 5}, new int[]{y, y + arrowHeight, y + arrowHeight}, 3);
+        // Отрисовываем стрелку (треугольник) над низом свечи
+
+
+
+    ////////////
 
 
     }
@@ -220,14 +264,14 @@ public class CandlestickPropocianatorRisvalshik extends JPanel {
     public void testConsole(int i ){
         // Вывод информации о текущей свече в консоль на русском языке
         Svecha currentCandle = candlesticks.get(i);
-        System.out.println("Свеча " + i + ": Открытие=" + currentCandle.getOpen() + ", Максимум=" + currentCandle.getHigh() +
-                ", Минимум=" + currentCandle.getLow() + ", Закрытие=" + currentCandle.getClose() +
-                ", Цвет=" + (currentCandle.getClose() > currentCandle.getOpen() ? "Зеленый" : "Красный")); // todo последняя свеча отображение не коректно - так как еще не зафиксированно
+//        System.out.println("Свеча " + i + ": Открытие=" + currentCandle.getOpen() + ", Максимум=" + currentCandle.getHigh() +
+//                ", Минимум=" + currentCandle.getLow() + ", Закрытие=" + currentCandle.getClose() +
+//                ", Цвет=" + (currentCandle.getClose() > currentCandle.getOpen() ? "Зеленый" : "Красный")); // todo последняя свеча отображение не коректно - так как еще не зафиксированно
 
         Svecha currentCandlePrev = candlesticks.get(i-1); // предыдущая свеча
-        System.out.println("Свеча " + (i-1) + ": Открытие=" + currentCandlePrev.getOpen() + ", Максимум=" + currentCandlePrev.getHigh() +
-                ", Минимум=" + currentCandlePrev.getLow() + ", Закрытие=" + currentCandlePrev.getClose() +
-                ", Цвет=" + (currentCandlePrev.getClose() > currentCandlePrev.getOpen() ? "Зеленый" : "Красный"));
+//        System.out.println("Свеча " + (i-1) + ": Открытие=" + currentCandlePrev.getOpen() + ", Максимум=" + currentCandlePrev.getHigh() +
+//                ", Минимум=" + currentCandlePrev.getLow() + ", Закрытие=" + currentCandlePrev.getClose() +
+//                ", Цвет=" + (currentCandlePrev.getClose() > currentCandlePrev.getOpen() ? "Зеленый" : "Красный"));
     }
 
 //    public void dobavlenyeSvechiRunTime(Svecha newCandle) {
@@ -312,6 +356,7 @@ public class CandlestickPropocianatorRisvalshik extends JPanel {
 
         return bollingerBands;
     }
+
 
 
 

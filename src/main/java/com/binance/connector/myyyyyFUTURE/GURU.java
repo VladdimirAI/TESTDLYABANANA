@@ -1,5 +1,6 @@
 package com.binance.connector.myyyyyFUTURE;
 
+import com.binance.connector.myyyyyFUTURE.MYTEST.ProcessorBirghiTEST;
 import com.binance.connector.myyyyyFUTURE.mp3.MP3Player;
 import com.binance.connector.myyyyyFUTURE.parsery.Parser;
 import com.binance.connector.myyyyyFUTURE.processory.Processor;
@@ -34,7 +35,7 @@ public class GURU {
     static double realBalace;
 
 
-    static ExecutorService executor;
+    static ExecutorService executor; //todo возможно убрать
 
     public static Processor processor;
     public static OrderManager orderManager;

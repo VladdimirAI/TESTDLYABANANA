@@ -1,0 +1,3806 @@
+package com.binance.connector.myyyyyFUTURE.bolinjer;
+
+
+
+
+
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class BollingerBandsCalculator {
+    public static List<Double> calculateSMA(List<Svecha> candlesticks, int period) {
+        List<Double> sma = new ArrayList<>();
+        for (int i = 0; i < candlesticks.size(); i++) {
+            if (i < period - 1) {
+                sma.add(null);
+                continue;
+            }
+            double sum = 0;
+            for (int j = i; j > i - period; j--) {
+                sum += candlesticks.get(j).getClose();
+            }
+            sma.add(sum / period);
+        }
+        return sma;
+    }
+
+    public static List<Double[]> calculateBollingerBands(List<Svecha> candlesticks, int period) {
+        List<Double> sma = calculateSMA(candlesticks, period);
+        List<Double[]> bands = new ArrayList<>();
+
+        for (int i = 0; i < candlesticks.size(); i++) {
+            if (i < period - 1) {
+                bands.add(new Double[]{null, null});
+                continue;
+            }
+            double sumOfSquares = 0;
+            for (int j = i; j > i - period; j--) {
+                sumOfSquares += Math.pow(candlesticks.get(j).getClose() - sma.get(i), 2);
+            }
+            double stddev = Math.sqrt(sumOfSquares / period);
+            bands.add(new Double[]{sma.get(i) + 2 * stddev, sma.get(i) - 2 * stddev});
+        }
+        return bands;
+    }
+
+
+    //todo объеденить в один
+}
+
+package com.binance.connector.myyyyyFUTURE;
+
+import com.binance.connector.myyyyyFUTURE.MYTEST.ProcessorBirghiTEST;
+import com.binance.connector.myyyyyFUTURE.mp3.MP3Player;
+import com.binance.connector.myyyyyFUTURE.parsery.Parser;
+import com.binance.connector.myyyyyFUTURE.processory.Processor;
+import com.binance.connector.myyyyyFUTURE.suchnostyotservera.acaunt.AccountUpdate;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Order;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+import com.binance.connector.myyyyyFUTURE.sushnosty.ValutnayaPara;
+import com.binance.connector.myyyyyFUTURE.ustanovkaorderov.OrderManager;
+
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+
+public class GURU {
+
+    public static  AccountUpdate accountUpdate;
+
+    static Map<String, Order> runTimeOrders;
+    static Map<String, Order> stopLossOrders;
+    static Map<String, Order> takeProfitOrders;
+
+    static Set<Svecha> poslednyeSvechiisConsoli;
+    static Map<String, List<Svecha>> historySvechey; //todo подчистка
+    static List<String> MONEY;
+    static Map<String, ValutnayaPara> mapPosleZapytoy;
+    static double buyBalace;
+    static double shellBalace;
+    static double realBalace;
+
+
+    static ExecutorService executor; //todo возможно убрать
+
+    public static Processor processor;
+    public static OrderManager orderManager;
+
+
+    public static void activator(List<String> MONEY) {
+        runTimeOrders = new HashMap<>();
+        stopLossOrders = new HashMap<>();
+        takeProfitOrders = new HashMap<>();
+
+        poslednyeSvechiisConsoli = new HashSet<>();
+        historySvechey = new HashMap<>();
+
+        mapPosleZapytoy = Parser.parsInfoPosleZapytoy(PrivateConfig.INFOOCYFRAHPOSLEZAPYTOY);
+        realBalace = PrivateConfig.NACHALNUYBALANS;
+        buyBalace = realBalace * 2;//todo изучить
+        shellBalace = realBalace * 2;//todo изучить
+
+        GURU.MONEY = MONEY;
+
+        int numberOfThreads = 10; // Примерное количество потоков //todo обратить внимание
+
+        executor = Executors.newFixedThreadPool(numberOfThreads);
+
+        processor = new Processor();
+        orderManager = new OrderManager(PrivateConfig.API_KEY,PrivateConfig.SECRET_KEY);
+        accountUpdate = new AccountUpdate();
+    }
+
+    public static synchronized void setBuyBalance(double buyBalance) {
+        GURU.buyBalace = buyBalance;
+    }
+
+    public double getBuyBalance() {
+        return buyBalace;
+    }
+
+    public static synchronized void updateSellBalance(double change) {
+        shellBalace += change; // change может быть как положительным, так и отрицательным
+    }
+
+    public static synchronized double getSellBalance() {
+        return shellBalace;
+    }
+    public static synchronized void setRealBalance(double realBalance) {
+        realBalace = realBalance;
+    }
+
+    public double getRealBalance() {
+        return realBalace;
+    }
+
+
+    public static void updateSvechi(String simbol, Svecha svecha) {
+    historySvechey.get(simbol).add(svecha);
+    }
+
+    public static List<Svecha> getHistorySvecheyOnSybol(String simbol){
+       return historySvechey.get(simbol);
+    }
+
+    public static void addOneMoneyAndHistorySvechey(String money, List<Svecha> listOneSvechi22) {
+        historySvechey.put(money,listOneSvechi22);
+    }
+
+    public static void addOrder(Order order){ ///todo почему не используеться ???
+        String symbol = order.getSymbol();
+        runTimeOrders.put(symbol,order);
+    }
+
+    public static void addStopLossOrder(Order order){
+        String symbol = order.getSymbol();
+        stopLossOrders.put(symbol,order);
+    }
+
+    public static void addTakeProfitOrder(Order order){
+        String symbol = order.getSymbol();
+        takeProfitOrders.put(symbol,order);
+    }
+
+    public static Map<String, ValutnayaPara> getMapPosleZapytoy() {
+        return mapPosleZapytoy;
+    }
+
+
+
+    public static double ocruglitel(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        BigDecimal bd = BigDecimal.valueOf(value);
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+        return bd.doubleValue();
+    }
+
+    public static Map<String,Order> getRunTimeOrders() {
+        return runTimeOrders;
+    }
+
+    public static Map<String, Order> getStopLossOrders() {return stopLossOrders;}
+
+    public static Map<String, Order> getTakeProfitOrders() {return takeProfitOrders;}
+
+
+    public static void playSIGNAL(){
+        MP3Player.play("musicSignal.mp3");
+    }
+
+}
+
+
+//todo statik and zapis sinhronaized
+package com.binance.connector.myyyyyFUTURE;
+
+import com.binance.connector.myyyyyFUTURE.parsery.GetterAndParserSvechey;
+import com.binance.connector.myyyyyFUTURE.parsery.ReaderMoney;
+import com.binance.connector.myyyyyFUTURE.streampotoki.AllPairsCandlestickStream;
+import com.binance.connector.myyyyyFUTURE.streampotoki.UserDataStream;
+
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+public class Main {
+    public static   AllPairsCandlestickStream allPairsCandlestickStream;
+    public static UserDataStream userDataStream;
+    public static String listenKey;
+
+    public static void main(String[] args) {
+
+        ReaderMoney readerMoney = new ReaderMoney();
+        List<String> oldMoneyZnak = readerMoney.readCurrencyPairsFromFile(PrivateConfig.MONEY_FILE);//todo поменять файл на фьючерсный
+        for (String pair : oldMoneyZnak) {
+            System.out.println(pair);
+        }
+
+        GURU.activator(oldMoneyZnak);
+
+        GetterAndParserSvechey.getVseSvechiizSpiska(oldMoneyZnak);
+
+
+        listenKey = GURU.orderManager.createListenKey();
+        System.out.println(listenKey);
+
+
+        allPairsCandlestickStream = new AllPairsCandlestickStream();
+        allPairsCandlestickStream.subscribeToAllPairsCandlesticks(GURU.MONEY, PrivateConfig.TIMENG);  // todo раз в 24 часа перепдключать
+//
+        userDataStream = new UserDataStream();
+        userDataStream.subscribeToUserDataStream(listenKey);
+//        userDataStream.subscribeToUserDataStream(PrivateConfig.LISTEN_KEY);  // для тестов
+
+
+
+
+
+
+
+
+
+
+        ScheduledExecutorService executorServiceReconnect = Executors.newSingleThreadScheduledExecutor();
+        long periodReconnect = 24 * 60; // Период в минутах для переподключения (24 часа)
+        executorServiceReconnect.scheduleAtFixedRate(() -> reconnectStreams(), 24 * 60, periodReconnect, TimeUnit.MINUTES);
+
+
+        ///ниже продление листен кей
+
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(); // todo раз в 55 минут делает PUT запрос
+
+        // Запуск задачи с начальной задержкой 55 и повтором каждые 55 минут
+        long period = 53; // Период в минутах
+        executorService.scheduleAtFixedRate(() -> callMyMethod(), 53, period, TimeUnit.MINUTES);
+    }
+
+    public static void callMyMethod() {
+        GURU.orderManager.prodlenyeListenKey();
+//        GURU.playSIGNAL();
+    }
+
+
+
+    public static void reconnectStreams() {
+        try {
+            // Закрыть текущие WebSocket соединения
+            closeCurrentWebsocketConnections();
+
+            // Подождать некоторое время перед повторным подключением
+            Thread.sleep(3000); // Ожидание 3 секундs
+
+            // Повторно инициировать WebSocket соединения
+            initializeWebsocketConnections();
+        } catch (InterruptedException e) {
+            System.out.println("Неполадки в методе reconnectStreams()");
+            Thread.currentThread().interrupt();
+            e.printStackTrace();
+        } catch (Exception e) {
+            System.out.println("Неполадки 2222 в методе reconnectStreams()");
+            e.printStackTrace();
+        }
+    }
+
+    private static void closeCurrentWebsocketConnections() {
+       userDataStream.closeAllStream();
+       allPairsCandlestickStream.closeAllStream();
+    }
+
+    private static void initializeWebsocketConnections() {
+        // Здесь ваш код для создания и подключения новых WebSocket соединений
+        // Например: создание новых экземпляров AllPairsCandlestickStream и UserDataStream
+        allPairsCandlestickStream = new AllPairsCandlestickStream();
+        allPairsCandlestickStream.subscribeToAllPairsCandlesticks(GURU.MONEY, PrivateConfig.TIMENG);
+
+        UserDataStream userDataStream = new UserDataStream();
+        userDataStream.subscribeToUserDataStream(listenKey);
+    }
+
+}
+
+
+//        OrderManager.main();
+//        OrderManager orderManager = new OrderManager(PrivateConfig.API_KEY, PrivateConfig.SECRET_KEY);
+//
+//        // Создание маркет ордера на продажу (SHORT)
+//        orderManager.createMarketOrder("ACHUSDT", "SELL", "309");  //Market Order Response: {"orderId":944500711,"symbol":"ACHUSDT","status":"NEW","clientOrderId":"JFtLsyHfIQQ6z9EOoccywB","price":"0.0000000","avgPrice":"0.00","origQty":"309","executedQty":"0","cumQty":"0","cumQuote":"0.0000000","timeInForce":"GTC","type":"MARKET","reduceOnly":false,"closePosition":false,"side":"SELL","positionSide":"BOTH","stopPrice":"0.0000000","workingType":"CONTRACT_PRICE","priceProtect":false,"origType":"MARKET","priceMatch":"NONE","selfTradePreventionMode":"NONE","goodTillDate":0,"updateTime":1704311239766}
+
+
+//        // Установка стоп-лосса для шорта
+//        orderManager.setStopLossForShort("ACHUSDT", "0.01", "18000");
+//
+//        // Установка тейк-профита для шорта
+//        orderManager.setTakeProfitForShort("ACHUSDT", "0.01", "22000");
+package com.binance.connector.myyyyyFUTURE.mp3;
+
+import javazoom.jl.player.Player;
+import java.io.FileInputStream;
+import java.io.InputStream;
+
+public class MP3Player {
+
+    public static void play(String resourcePath) {
+        new Thread(() -> {
+            try {
+                InputStream resourceStream = MP3Player.class.getClassLoader().getResourceAsStream(resourcePath);
+                if (resourceStream == null) {
+                    throw new IllegalArgumentException("Не удалось найти файл: звука " + resourcePath);
+                }
+                Player player = new Player(resourceStream);
+                player.play(); // Блокирует этот поток до окончания воспроизведения
+                player.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+}
+
+package com.binance.connector.myyyyyFUTURE.MYTEST.comunicacii;
+
+public class PrienshiZayavokNaOrderTEST {
+
+
+
+
+
+}
+
+package com.binance.connector.myyyyyFUTURE.MYTEST.comunicacii;
+
+public class VidavatelOrderov {
+}
+
+package com.binance.connector.myyyyyFUTURE.MYTEST.comunicacii;
+
+public class VidovatelSvechey {
+}
+
+package com.binance.connector.myyyyyFUTURE.MYTEST;
+
+import com.binance.connector.myyyyyFUTURE.PrivateConfig;
+import com.binance.connector.myyyyyFUTURE.parsery.Parser;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Order;
+import com.binance.connector.myyyyyFUTURE.sushnosty.ValutnayaPara;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+
+public class GURUTEST {
+
+    static Map<String, Order> runTimeOrdersRClientom;
+    static Map<String, Order> stopLossOrdersRClientom;
+    static Map<String, Order> takeProfitOrdersRClientom;
+
+    static Map<String, ValutnayaPara> mapPosleZapytoy;
+
+
+    static double buyBalaceClienta;
+    static double shellBalaceClienta;
+    static double realBalaceClienta;
+
+    public static ProcessorBirghiTEST processorBirghiTEST;
+
+    public GURUTEST(String symbol) {
+
+        runTimeOrdersRClientom = new HashMap<>();
+        stopLossOrdersRClientom = new HashMap<>();
+        takeProfitOrdersRClientom = new HashMap<>();
+
+        mapPosleZapytoy = Parser.parsInfoPosleZapytoy(PrivateConfig.INFOOCYFRAHPOSLEZAPYTOY);
+
+        realBalaceClienta = PrivateConfig.NACHALNUYBALANS;
+        buyBalaceClienta = realBalaceClienta * 2;//todo изучить
+        shellBalaceClienta = realBalaceClienta * 2;//todo изучить
+
+        processorBirghiTEST = new ProcessorBirghiTEST(symbol);
+
+
+
+    }
+}
+
+package com.binance.connector.myyyyyFUTURE.MYTEST.parsery;
+
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
+public class SvechaParser {
+    public static List<Svecha> parsimZaGod(String symbol) {
+        String pathToFile = "C:\\ИсторическиеДАнныеБИНАНС\\2\\ACHUSDT.txt"; //todo поправить на симбол переменную
+        List<Svecha> svechi = new ArrayList<>();
+
+        try {
+            List<String> lines = Files.readAllLines(Paths.get(pathToFile));
+            for (String line : lines) {
+                String[] parts = line.split(",");
+                long openTime = Long.parseLong(parts[0]);
+                double open = Double.parseDouble(parts[1]);
+                double high = Double.parseDouble(parts[2]);
+                double low = Double.parseDouble(parts[3]);
+                double close = Double.parseDouble(parts[4]);
+
+                Svecha svecha = new Svecha(symbol, openTime, open, high, low, close);
+                svechi.add(svecha);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Размер листа " + svechi.size());
+
+        return svechi;
+        // После парсинга, в списке svechi будут все свечи в порядке файла
+        // Здесь вы можете выполнить с этим списком что-либо
+    }
+}
+package com.binance.connector.myyyyyFUTURE.MYTEST;
+
+import com.binance.connector.myyyyyFUTURE.GURU;
+import com.binance.connector.myyyyyFUTURE.processory.Processor;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Order;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+
+public class ProcessorBirghiTEST {
+
+    public String symbol;
+
+    public GURUTEST GURUTEST;
+
+    public Svecha tecushayaSvecha;
+
+    public boolean ochered;
+
+
+    public ProcessorBirghiTEST(String symbol) { //todo больше не создавать!!!!!!!!!
+        this.symbol = symbol;
+    }
+
+    public void nachaloTesta(List<Svecha> listVsehSvecheyZaGodOdnoyMonety) {
+        System.out.println("nachaloTesta thread id: " + Thread.currentThread().getId());
+
+
+        for (Svecha nextSvecha : listVsehSvecheyZaGodOdnoyMonety) {
+
+            proverkaSrabotkiOrderovNaSvechu(nextSvecha);
+
+            tecushayaSvecha = nextSvecha;
+
+
+
+
+
+                otpravkaClientuSvechi(nextSvecha); //только когда выполняеться метод приемка ордеров хоть и спустым икончаетьсятолько потом продолжнаеться кдтут тоесть вызываетьс новя итерация
+
+
+
+
+
+
+//            priemkaObrabotkaOrderov(nextSvecha);
+
+
+        }
+        //todo код после прогонки всех свечей по окончанию теста
+        System.out.println(GURUTEST.realBalaceClienta);
+
+    }
+
+
+    public void proverkaSrabotkiOrderovNaSvechu(Svecha svechaDlyaOtpravkiClientu) { //stLoss TAkeProfi
+
+        Random rand = new Random();
+        boolean firstConditionFirst = rand.nextBoolean();
+
+
+        if (firstConditionFirst) {
+            // Выполнить первое условие
+            checkStopLossOrders(svechaDlyaOtpravkiClientu); //todo условвие 50 на 50 что сработает первее
+
+            // Выполнить второе условие
+            checkTakeProfitOrders(svechaDlyaOtpravkiClientu);
+
+        } else {
+            // Выполнить второе условие
+            checkTakeProfitOrders(svechaDlyaOtpravkiClientu);
+
+            // Выполнить первое условие
+            checkStopLossOrders(svechaDlyaOtpravkiClientu);
+        }
+    }
+
+
+    private void checkStopLossOrders(Svecha svecha) {
+        double verhCenySvechi = svecha.getHigh();
+        double nizhCenySvichi = svecha.getLow();
+
+        if (GURUTEST.stopLossOrdersRClientom.containsKey(symbol)) {
+            Order order = GURUTEST.stopLossOrdersRClientom.get(symbol);
+            double cenorderaSL = order.getCenaVhoda();
+            double qentySL = order.getColichestvoCuplennuhMonet();
+
+            if (verhCenySvechi >= cenorderaSL && nizhCenySvichi <= cenorderaSL) {
+                // Тут код для обработки stop loss orders
+                // ...
+                GURUTEST.stopLossOrdersRClientom.remove(symbol);
+
+                Order runTimeOrder = GURUTEST.runTimeOrdersRClientom.get(symbol);
+                GURUTEST.runTimeOrdersRClientom.remove(symbol);
+
+
+                double scolkoNadoNaPokupkuMonet = cenorderaSL * qentySL;
+
+                double scolkoZatratiliNaPokupkuVRunTime = runTimeOrder.getCenaVhoda() * runTimeOrder.colichestvoCuplennuhMonet; //todo првавельнее было бы qentySL из раннтайма взять
+
+                double raznycaObshayaBezTela = scolkoZatratiliNaPokupkuVRunTime - scolkoNadoNaPokupkuMonet;
+
+                GURUTEST.realBalaceClienta += scolkoZatratiliNaPokupkuVRunTime + raznycaObshayaBezTela;
+
+                if (GURUTEST.takeProfitOrdersRClientom.containsKey(symbol)) { //todo потму что верх и  низ бывает СЛ
+                    GURUTEST.takeProfitOrdersRClientom.remove(symbol);
+                }
+            }
+
+        }
+
+
+    }
+
+
+    private void checkTakeProfitOrders(Svecha svecha) {
+        double verhCenySvechi = svecha.getHigh();
+        double nizhCenySvichi = svecha.getLow();
+
+        if (GURUTEST.takeProfitOrdersRClientom.containsKey(symbol)) {
+            Order orderTP = GURUTEST.takeProfitOrdersRClientom.get(symbol);
+            double cenorderaTP = orderTP.getCenaVhoda();
+            double qentyTP = orderTP.getColichestvoCuplennuhMonet();
+
+            if (verhCenySvechi >= cenorderaTP && nizhCenySvichi <= cenorderaTP) {
+                // Тут код для обработки take profit orders
+                // ...
+
+                GURUTEST.stopLossOrdersRClientom.remove(symbol);
+
+                Order orderRuTime = GURUTEST.runTimeOrdersRClientom.get(symbol);
+
+                orderRuTime.colichestvoCuplennuhMonet = orderRuTime.colichestvoCuplennuhMonet / 2; // произвел изменения уменьшение монет в ратайме
+//                orderRuTime.setCenaVhoda(orderTP.getCenaVhoda());// произвел изменения в ратайме ненадо!!!!!!!!!
+
+
+                double scolkoNadoNaPokupkuMonet = cenorderaTP * orderRuTime.colichestvoCuplennuhMonet / 2;
+
+                double scolkoZatratiliNaPokupkuVRunTime = orderRuTime.getCenaVhoda() * orderRuTime.colichestvoCuplennuhMonet / 2; //todo првавельнее было бы qentySL из раннтайма взять
+
+                double raznycaObshayaBezTela = scolkoZatratiliNaPokupkuVRunTime - scolkoNadoNaPokupkuMonet;
+
+                GURUTEST.realBalaceClienta += scolkoZatratiliNaPokupkuVRunTime + raznycaObshayaBezTela;
+
+
+                GURUTEST.takeProfitOrdersRClientom.remove(symbol);
+
+
+            }
+        }
+    }
+///////////////////////////////////////////////////////////////////////////OTPRAVKA PRIEMKA
+
+    public void otpravkaClientuSvechi(Svecha svecha) {
+        System.out.println("otpravkaClientuSvechi--");
+
+//        Svecha copy = new Svecha(svecha.money,svecha.getOpenTime(), svecha.getOpen(), svecha.getHigh(),svecha.getLow(),svecha.getClose());
+
+
+        GURU.processor.TestmetodPriemkaCvechi(svecha);
+
+    }
+
+    public void priemkaObrabotkaOrderov(List<Order> orderListotClienta) { //сюдаже и рантайм приходит
+        System.out.println("priemkaObrabotkaOrderov thread id: " + Thread.currentThread().getId());
+
+        if (orderListotClienta.isEmpty()){
+            System.out.println("Готов приемка ордеров было пусто");
+            return;
+        }
+
+
+        for (Order zaprosOrder : orderListotClienta) {
+            String zaprosOrderNapravlenye = zaprosOrder.getSide();
+            String zaporOrderType = zaprosOrder.getType();
+
+            if (zaprosOrderNapravlenye.equals("SELL")) {
+
+                if (GURUTEST.runTimeOrdersRClientom.containsKey(symbol) || GURUTEST.stopLossOrdersRClientom.containsKey(symbol) || GURUTEST.takeProfitOrdersRClientom.containsKey(symbol)) {
+                    System.out.println("Так быть не должно ставка при имеющихся ордерах - БАГА");
+                    System.out.println("Ордера которые лежа в ГУРУТЕСТ");
+
+                    Optional.ofNullable(GURUTEST.runTimeOrdersRClientom.get(symbol))
+                            .ifPresent(order -> System.out.println("RunTime Order: " + order.toString()));
+                    Optional.ofNullable(GURUTEST.stopLossOrdersRClientom.get(symbol))
+                            .ifPresent(order -> System.out.println("StopLoss Order: " + order.toString()));
+                    Optional.ofNullable(GURUTEST.takeProfitOrdersRClientom.get(symbol))
+                            .ifPresent(order -> System.out.println("TakeProfit Order: " + order.toString()));
+
+//                 В этом коде:
+//
+//                 Optional.ofNullable используется для создания Optional объекта, который может содержать null.
+//                         ifPresent выполняет переданный лямбда-выражение, если значение в Optional существует (то есть, не null).
+//                 Этот подход позволяет избежать явной проверки на null и делает код более читабельным и функциональным. Если соответствующие значения существуют в мапах, они будут выведены в консоль. Если значения отсутствуют, ifPresent ничего не делает.
+                }
+
+                GURUTEST.runTimeOrdersRClientom.put(symbol, zaprosOrder);
+                GURUTEST.realBalaceClienta -= zaprosOrder.colichestvoCuplennuhMonet * zaprosOrder.getCenaVhoda();
+
+
+            } else { //todo тут все ВЫХОДЫ - бай рантайм(выход) стоп и профит
+
+                switch (zaporOrderType) {
+                    case "MARKET": // Код для обработки типа MARKET бай - выход из текущей позиции
+
+                        double vhodilRaneevRunCena = GURUTEST.runTimeOrdersRClientom.get(symbol).getCenaVhoda();
+                        //todo СРАВНИТЬ Вбудущем qenty
+                        double vhodilRaneevRunMonetSHTUK = GURUTEST.runTimeOrdersRClientom.get(symbol).getColichestvoCuplennuhMonet();
+
+                        double zatratilPriVhodeVrun = vhodilRaneevRunCena * vhodilRaneevRunMonetSHTUK;
+
+                        double tecuhayaCena = tecushayaSvecha.getOpen();
+
+                        double raznicaSeychas = zatratilPriVhodeVrun - tecuhayaCena * vhodilRaneevRunMonetSHTUK;
+
+                        GURUTEST.realBalaceClienta += zatratilPriVhodeVrun + raznicaSeychas;
+
+                        GURUTEST.runTimeOrdersRClientom.remove(symbol);
+
+                        break;
+
+                    case "STOP_MARKET": // Код для обработки типа STOP_MARKET
+
+                        GURUTEST.stopLossOrdersRClientom.put(symbol, zaprosOrder);
+
+
+                        break;
+
+                    case "TAKE_PROFIT_MARKET":   // Код для обработки типа TAKE_PROFIT_MARKET
+
+                        GURUTEST.takeProfitOrdersRClientom.put(symbol, zaprosOrder);
+
+
+                        break;
+
+                    default:
+                        System.out.println("Что за левый тип ??"); // Код для обработки неизвестного типа
+                        break;
+                }
+
+
+            }
+
+
+//        parameters.put("side", side); // "SELL" для шорта, "BUY" для лонга
+//        parameters.put("type", "MARKET");
+
+//        parameters.put("side", "BUY");
+//        parameters.put("type", "STOP_MARKET");
+
+
+//        parameters.put("side", "BUY");
+//        parameters.put("type", "TAKE_PROFIT_MARKET");
+
+
+        }
+        System.out.println("Готов приемка ордеров");
+
+    }
+}
+package com.binance.connector.myyyyyFUTURE.MYTEST;
+
+import com.binance.connector.myyyyyFUTURE.GURU;
+import com.binance.connector.myyyyyFUTURE.MYTEST.parsery.SvechaParser;
+import com.binance.connector.myyyyyFUTURE.MYTEST.visualizator.visualizator.VidoditelVOkno;
+import com.binance.connector.myyyyyFUTURE.PrivateConfig;
+import com.binance.connector.myyyyyFUTURE.parsery.GetterAndParserSvechey;
+import com.binance.connector.myyyyyFUTURE.parsery.ReaderMoney;
+import com.binance.connector.myyyyyFUTURE.streampotoki.AllPairsCandlestickStream;
+import com.binance.connector.myyyyyFUTURE.streampotoki.UserDataStream;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+
+import java.util.List;
+import java.awt.*;
+
+
+public class StartTest {
+
+//            "2023-01-01", // начальная дата в формате "год-месяц-день"
+//            "2023-12-31"  // конечная дата в формате "год-месяц-день"
+
+    public static void main(String[] args) {
+
+      String symbol  = "ACHUSDT";
+
+      VidoditelVOkno vidoditelVOkno = new VidoditelVOkno();
+
+      GURUTEST GURUTEST = new GURUTEST(symbol);
+
+      List<Svecha> listVsehSvecheyOdnoyMonety = SvechaParser.parsimZaGod(symbol); //todo поправить внутри
+
+      List<Svecha> listVsehSvecheyNugnoyDaty = SvechaVidovatelPoDate.filterSvechi(listVsehSvecheyOdnoyMonety,"2023-12-24","2023-12-25");
+
+////////////////////////////WWWWWWWWWWWWWWWWWWWWWWW из запуска майн
+      ReaderMoney readerMoney = new ReaderMoney();
+      List<String> oldMoneyZnak = readerMoney.readCurrencyPairsFromFile(PrivateConfig.MONEY_FILE);//todo поменять файл на фьючерсный
+      for (String pair : oldMoneyZnak) {
+        System.out.println(pair);
+      }
+
+      GURU.activator(oldMoneyZnak);
+
+
+
+      List<Svecha> pervyList22 = listVsehSvecheyNugnoyDaty.subList(0, 22);
+      List<Svecha> vtoroyListposle22 = listVsehSvecheyNugnoyDaty.subList(22, listVsehSvecheyNugnoyDaty.size());
+
+      for (Svecha svecha : pervyList22) {
+        // Здесь ваша логика для определения цвета на основе цен свечи
+        // Например, если цена закрытия выше цены открытия, устанавливаем цвет "зеленый", иначе "красный"
+        Color color = (svecha.getClose() > svecha.getOpen()) ? Color.GREEN : Color.RED;
+        svecha.setColor(color);
+      }
+
+
+      GURU.addOneMoneyAndHistorySvechey(symbol,pervyList22);
+
+///////////////////////MMMMMMMMMMMMMMMMMMM из запуска майн
+
+      GURUTEST.processorBirghiTEST.nachaloTesta(listVsehSvecheyNugnoyDaty);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/////////////////////////////////////////////
+//        vidoditelVOkno.vivodVOkno(listVsehSvecheyNugnoyDaty); //todo выше вывели часть свечей в окно !!!
+////////////////////////////////////////////////////
+
+
+
+
+      //добавляем одну свечу в рантаймРежиме
+
+
+//      Svecha posled =  listVsehSvecheyNugnoyDaty.get(listVsehSvecheyNugnoyDaty.size()-1);
+//      Svecha predPosl =  listVsehSvecheyNugnoyDaty.get(listVsehSvecheyNugnoyDaty.size()-2);
+//      Svecha predpred =  listVsehSvecheyNugnoyDaty.get(listVsehSvecheyNugnoyDaty.size()-3);
+//
+//      try {
+//        Thread.sleep(10000);
+//        vidoditelVOkno.chart.dobavlenyeSvechiRunTime(predpred);
+//        Thread.sleep(2000);
+//
+//        vidoditelVOkno.chart.dobavlenyeSvechiRunTime(predPosl);
+//        Thread.sleep(2000);
+//
+//        vidoditelVOkno.chart.dobavlenyeSvechiRunTime(posled);
+//      } catch (InterruptedException e) {
+//        throw new RuntimeException(e);
+//      }
+
+
+    }
+}
+
+package com.binance.connector.myyyyyFUTURE.MYTEST;
+
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+
+public class SvechaVidovatelPoDate {
+
+    public static List<Svecha> filterSvechi(List<Svecha> svechi, String startDateStr, String endDateStr) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        long startMillis = LocalDate.parse(startDateStr, formatter).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        // Добавляем 1 день к конечной дате и вычитаем 1 миллисекунду, чтобы получить конец дня
+        long endMillis = LocalDate.parse(endDateStr, formatter).plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1;
+
+        List<Svecha> filteredSvechi = new ArrayList<>();
+        for (Svecha svecha : svechi) {
+            if (svecha.getOpenTime() >= startMillis && svecha.getOpenTime() <= endMillis) {
+                filteredSvechi.add(svecha);
+            }
+        }
+        return filteredSvechi;
+    }
+}
+
+package com.binance.connector.myyyyyFUTURE.MYTEST;
+
+public class SynhronyzatorTest {
+
+    boolean otpravkaSvechi;
+
+}
+
+package com.binance.connector.myyyyyFUTURE.MYTEST.syshnostytest;
+
+//public class Client {
+//
+//    double balanceClienta;
+//
+//    public Client(double balanceClienta) {
+//        this.balanceClienta = balanceClienta;
+//    }
+//}
+
+package com.binance.connector.myyyyyFUTURE.MYTEST.tolkodlyanachala;
+
+import java.io.*;
+import java.nio.file.*;
+import java.util.*;
+
+public class CsvAggregator {
+    public static void main(String[] args) throws IOException {
+        String directoryPath = "C:\\ИсторическиеДАнныеБИНАНС\\1"; // Замените на ваш путь к файлам
+        File dir = new File(directoryPath);
+        File[] files = dir.listFiles((d, name) -> name.endsWith(".csv"));
+
+        // Фильтрация и сортировка файлов по дате в названии
+        Arrays.sort(files, Comparator.comparing(File::getName));
+
+        HashMap<String, List<File>> filesByPair = new HashMap<>();
+
+        // Группировка файлов по валютным парам
+        for (File file : files) {
+            String pair = file.getName().split("-")[0];
+            filesByPair.computeIfAbsent(pair, k -> new ArrayList<>()).add(file);
+        }
+
+        // Объединение файлов для каждой пары в правильном порядке
+        for (String pair : filesByPair.keySet()) {
+            List<File> pairFiles = filesByPair.get(pair);
+            BufferedWriter writer = Files.newBufferedWriter(Paths.get(directoryPath, pair + ".txt"));
+
+            for (File pairFile : pairFiles) {
+                List<String> lines = Files.readAllLines(pairFile.toPath());
+                lines.remove(0); // Предполагая, что первая строка - заголовок
+                for (String line : lines) {
+                    writer.write(line);
+                    writer.newLine();
+                }
+            }
+
+            writer.close();
+        }
+    }
+}
+
+package com.binance.connector.myyyyyFUTURE.MYTEST.visualizator.visualizator;
+
+
+
+
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+
+import java.awt.*;
+
+public class AnalizerPatternOne {
+
+  private   double tailToBodyRatio = 2.0;
+
+  private   double procentSmaLine = 10.0;
+
+
+// todo добавить проверку на доджик - сильно малекре тело свечи
+    public void analizer (Svecha candlestick, double sma){
+
+ double differenceBody = candlestick.getColor() == Color.GREEN ? candlestick.getClose() - candlestick.getOpen() : candlestick.getOpen() - candlestick.getClose(); // числовое значение тела свечи (модуль без знака)
+ double differenceTail = candlestick.getColor() == Color.GREEN ?  candlestick.getHigh() - candlestick.getClose() : candlestick.getHigh() - candlestick.getOpen();  // числовое значение верхнего хвоста  свечи (модуль без знака)
+
+      if( differenceTail/differenceBody > tailToBodyRatio && sma > procentSmaLine){
+          System.out.println("Ставим ");
+      }
+      else{
+          System.out.println("Не ставим "); //Todo убрать потом
+      }
+
+    }
+
+
+
+
+}
+
+package com.binance.connector.myyyyyFUTURE.MYTEST.visualizator.visualizator;
+
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+import org.json.JSONArray;
+//import org.json.JSONException;
+//
+//import java.io.BufferedReader;
+//import java.io.FileReader;
+//import java.io.IOException;
+//import java.util.ArrayList;
+//import java.util.List;
+//
+//public class CandlestickDataParser {
+//
+//    public static List<Svecha> readCandlesticksFromFile(String fileName) {
+//        List<Svecha> candlesticks = new ArrayList<>();
+//
+//        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+//            String line = reader.readLine();
+//            JSONArray jsonArray = new JSONArray(line);
+//
+//            for (int i = 0; i < jsonArray.length(); i++) {
+//                JSONArray candlestickData = jsonArray.getJSONArray(i);
+////                long openTime = candlestickData.getLong(0);
+//                double open = candlestickData.getDouble(1);
+//                double high = candlestickData.getDouble(2);
+//                double low = candlestickData.getDouble(3);
+//                double close = candlestickData.getDouble(4);
+//                // Пропускаем остальные данные, так как они нам не нужны для отображения
+//
+//                Svecha candlestick = new Svecha( open, high, low, close);
+//                candlesticks.add(candlestick);  //todo  в ориге ложит еще два параметра
+//            }
+//        } catch (IOException | JSONException e) {
+//            e.printStackTrace();
+//        }
+//
+//        return candlesticks;
+//    }
+//}
+package com.binance.connector.myyyyyFUTURE.MYTEST.visualizator.visualizator;
+
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
+
+public class CandlestickPropocianatorRisvalshik extends JPanel {
+
+    AnalizerPatternOne analizerPatternOne;
+
+    private final List<Svecha> candlesticks;
+    private final List<Double[]> bollingerBands; // Данные линий Боллинджера
+    private final List<Double> smaValues; // Данные SMA
+    private double minPrice = Double.MAX_VALUE;
+    private double maxPrice = Double.MIN_VALUE;
+
+
+    private double scale = 1.0;
+    private final int minCandleWidth = 1;
+    private final int maxCandleWidth = 20;
+
+    public CandlestickPropocianatorRisvalshik(List<Svecha> candlesticks, List<Double[]> bollingerBands, List<Double> smaValues) {
+        AnalizerPatternOne analizerPatternOne1 = new AnalizerPatternOne();
+        this.analizerPatternOne = analizerPatternOne1;
+        this.candlesticks = candlesticks;
+        this.bollingerBands = bollingerBands;
+        this.smaValues = smaValues;
+        calculatePriceRange();
+        setPreferredSize(new Dimension(800, 600));
+
+        addMouseWheelListener(e -> {
+            if (e.getWheelRotation() < 0) {
+                scale = Math.min(scale + 0.1, maxCandleWidth / (double) minCandleWidth);
+            } else {
+                scale = Math.max(scale - 0.1, 1.0);
+            }
+            updatePreferredSize(); // Обновляем размер компонента
+            repaint(); // Перерисовываем компонент
+
+        });
+
+    }
+
+    private void calculatePriceRange() {
+        for (Svecha candle : candlesticks) {
+            minPrice = Math.min(minPrice, candle.getLow());
+            maxPrice = Math.max(maxPrice, candle.getHigh());
+        }
+    }
+
+    private double calculatePercentageChange(double previousClose, double currentClose) {
+        if (previousClose == 0) {
+            return 0; // Избегаем деления на ноль
+        }
+        return  ((currentClose - previousClose) / previousClose * 100);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+
+        int width = getWidth();
+        int height = getHeight();
+//        int candleWidth = Math.max(width / candlesticks.size() - 1, 1);
+        int candleWidth = Math.max((int) (minCandleWidth * scale), minCandleWidth);
+        // Отрисовка свечей
+        for (int i = 0; i < candlesticks.size(); i++) {
+            Svecha candle = candlesticks.get(i);
+
+            int x = i * (candleWidth + 1);
+            int yHigh = (int) ((maxPrice - candle.getHigh()) / (maxPrice - minPrice) * height);
+            int yLow = (int) ((maxPrice - candle.getLow()) / (maxPrice - minPrice) * height);
+            int yOpen = (int) ((maxPrice - candle.getOpen()) / (maxPrice - minPrice) * height);
+            int yClose = (int) ((maxPrice - candle.getClose()) / (maxPrice - minPrice) * height);
+
+            Color color = candle.getClose() > candle.getOpen() ? Color.GREEN : Color.RED;
+            candle.setColor(color);
+            g2d.setColor(color);
+
+            g2d.fillRect(x, Math.min(yOpen, yClose), candleWidth, Math.abs(yClose - yOpen));
+            g2d.drawLine(x + candleWidth / 2, yHigh, x + candleWidth / 2, yLow);
+        }
+
+//        // Отрисовка полос Боллинджера
+//        g2d.setColor(Color.BLUE);
+//        for (int i = 0; i < candlesticks.size(); i++) {
+//            Double[] bands = bollingerBands.get(i);
+//            if (bands != null && bands[0] != null && bands[1] != null) {
+//                int x = i * (candleWidth + 1);
+//                int yUpperBand = (int) ((maxPrice - bands[0]) / (maxPrice - minPrice) * height);
+//                int yLowerBand = (int) ((maxPrice - bands[1]) / (maxPrice - minPrice) * height);
+//
+//                g2d.drawLine(x, yUpperBand, x + candleWidth, yUpperBand);
+//                g2d.drawLine(x, yLowerBand, x + candleWidth, yLowerBand);
+//            }
+//        }
+        // Отрисовка полос Боллинджера
+        g2d.setColor(Color.BLUE);
+        for (int i = 1; i < candlesticks.size(); i++) {
+
+                Double[] previousBands = bollingerBands.get(i - 1);
+                Double[] currentBands = bollingerBands.get(i);
+
+                if (previousBands != null && currentBands != null && previousBands[0] != null && currentBands[0] != null) {
+                    int x1 = (i - 1) * (candleWidth + 1);
+                    int y1Upper = (int) ((maxPrice - previousBands[0]) / (maxPrice - minPrice) * height);
+                    int y1Lower = (int) ((maxPrice - previousBands[1]) / (maxPrice - minPrice) * height);
+
+                    int x2 = i * (candleWidth + 1);
+                    int y2Upper = (int) ((maxPrice - currentBands[0]) / (maxPrice - minPrice) * height);
+                    int y2Lower = (int) ((maxPrice - currentBands[1]) / (maxPrice - minPrice) * height);
+
+                    // Рисуем непрерывные линии для верхней и нижней полос Боллинджера
+                    g2d.drawLine(x1, y1Upper, x2, y2Upper);
+                    g2d.drawLine(x1, y1Lower, x2, y2Lower);
+                }
+            }
+
+        // Отрисовка линии SMA
+        g2d.setColor(Color.BLACK);
+        for (int i = 1; i < candlesticks.size(); i++) {
+//            if (i < smaValues.size() && smaValues.get(i) != null && smaValues.get(i - 1) != null) {
+                if (smaValues.get(i) != null && smaValues.get(i - 1) != null) { // ориг
+
+                int x1 = (i - 1) * (candleWidth + 1);
+                int y1 = (int) ((maxPrice - smaValues.get(i - 1)) / (maxPrice - minPrice) * height);
+                int x2 = i * (candleWidth + 1);
+                int y2 = (int) ((maxPrice - smaValues.get(i)) / (maxPrice - minPrice) * height);
+                g2d.drawLine(x1, y1, x2, y2);
+            }
+
+        }
+
+        // Отрисовка процентных изменений
+        for (int i = 1; i < candlesticks.size(); i++) {
+            Svecha currentCandle = candlesticks.get(i);
+            double percentageChange = calculatePercentageChange(candlesticks.get(i - 1).getClose(), currentCandle.getClose());
+            percentageChange  = Math.abs(percentageChange);
+            int x = i * (candleWidth + 1);
+            int y = (int) ((maxPrice - currentCandle.getClose()) / (maxPrice - minPrice) * getHeight());
+
+            // Выбираем контрастный цвет для процентов, исходя из цвета свечи
+            Color textColor = currentCandle.getClose() > currentCandle.getOpen() ? new Color(0, 100, 0) : Color.BLUE;
+//            Color textColor = currentCandle.getClose() > currentCandle.getOpen() ? Color.GREEN : Color.BLUE;
+            g2d.setColor(textColor);
+
+            // Создаем текст с процентами
+            String percentageText = String.format("%.1f%%", percentageChange);
+            int textWidth = g2d.getFontMetrics().stringWidth(percentageText);
+            int textHeight = g2d.getFontMetrics().getHeight();
+
+            // Располагаем текст так, чтобы он не перекрывал тело свечи
+            int yOffset = currentCandle.getClose() > currentCandle.getOpen() ? -textHeight - 2 : textHeight + 2;
+            g2d.drawString(percentageText, x, y + yOffset);
+
+
+            // Расчет и отображение дополнительного процентного изменения относительно средней линии Боллинджера
+//            if (Math.abs(percentageChange) > 10 && smaValues.size() > i) {
+            if (i == smaValues.size()-2) { // работаем с предпоследней свечей(последняя сформировавщиеся)
+
+
+                testConsole(smaValues.size()-1); //вывод в консоль - последней сформировавщейся свечи, и последней несвормировавщейся
+
+
+                Double smaValue = smaValues.get(i-1); // Значение SMA для текущей(предпоследней- посленей сформировавщейся) свечи
+
+                if (smaValue != null) {
+                    double bollingerPercentageChange = calculatePercentageChange(smaValue, currentCandle.getClose());
+
+                    // Выбираем оранжевый цвет для текста
+                    g2d.setColor(Color.ORANGE);
+
+                    // Располагаем дополнительный текст на смещение в другую сторону
+                    int extraOffset = currentCandle.getClose() > currentCandle.getOpen() ? yOffset - 15 : yOffset + 15;
+                    g2d.drawString(String.format("%.1f%%", bollingerPercentageChange), x, y + extraOffset);
+
+                    analizerPatternOne.analizer(currentCandle,smaValue);
+
+                }
+            }
+        }
+
+
+
+
+
+        // Находим центральную свечу и её значение
+        int centerIndex = candlesticks.size() / 2;
+        Svecha centralCandle = candlesticks.get(centerIndex);
+        double centralValue = centralCandle.getClose(); // Можно выбрать другое значение
+
+        // Координаты для горизонтальной линии
+        int yLine = (int) ((maxPrice - centralValue) / (maxPrice - minPrice) * getHeight());
+
+        // Отрисовка горизонтальной линии
+        g2d.setColor(Color.GRAY);
+        g2d.drawLine(0, yLine, getWidth(), yLine);
+
+        // Добавление подписи к линии
+        String label = String.format("%.2f", centralValue);
+        g2d.drawString(label, 5, yLine - 2); // Расположение подписи рядом с линией
+
+
+
+
+    }
+
+    private void updatePreferredSize() {
+        int width = (int) (candlesticks.size() * (minCandleWidth * scale + 1));
+        int height = getHeight();
+        setPreferredSize(new Dimension(width, height));
+        revalidate(); // Важно: уведомить контейнер о изменении размера компонента
+    }
+
+
+    // Вывод информации о текущей свече в консоль на русском языке
+    public void testConsole(int i ){
+        // Вывод информации о текущей свече в консоль на русском языке
+        Svecha currentCandle = candlesticks.get(i);
+        System.out.println("Свеча " + i + ": Открытие=" + currentCandle.getOpen() + ", Максимум=" + currentCandle.getHigh() +
+                ", Минимум=" + currentCandle.getLow() + ", Закрытие=" + currentCandle.getClose() +
+                ", Цвет=" + (currentCandle.getClose() > currentCandle.getOpen() ? "Зеленый" : "Красный")); // todo последняя свеча отображение не коректно - так как еще не зафиксированно
+
+        Svecha currentCandlePrev = candlesticks.get(i-1); // предыдущая свеча
+        System.out.println("Свеча " + (i-1) + ": Открытие=" + currentCandlePrev.getOpen() + ", Максимум=" + currentCandlePrev.getHigh() +
+                ", Минимум=" + currentCandlePrev.getLow() + ", Закрытие=" + currentCandlePrev.getClose() +
+                ", Цвет=" + (currentCandlePrev.getClose() > currentCandlePrev.getOpen() ? "Зеленый" : "Красный"));
+    }
+
+//    public void dobavlenyeSvechiRunTime(Svecha newCandle) {
+//        // Добавляем новую свечу в список
+//        candlesticks.add(newCandle);
+//
+//        // Можно также обновить цены закрытия, если они используются для расчетов
+//        calculatePriceRange();
+//
+//        // Обновляем предпочтительный размер компонента, если он зависит от количества свечей
+//        updatePreferredSize();
+//
+//        // Перерисовываем компонент
+//        repaint();
+//    }
+
+    public void dobavlenyeSvechiRunTime(Svecha newCandle) {
+        // Добавляем новую свечу в список свечей
+        candlesticks.add(newCandle);
+
+        // Рассчитываем и добавляем данные Боллинджера и SMA для новой свечи
+        Double[] newBollingerBands = calculateBollingerBandsForNewCandle(newCandle);
+        double newSMA = calculateSMAForNewCandle(newCandle);
+
+        bollingerBands.add(newBollingerBands);
+        smaValues.add(newSMA);
+
+        // Обновляем остальные данные и перерисовываем компонент
+        calculatePriceRange();
+        updatePreferredSize();
+        repaint();
+    }
+
+    private double calculateSMAForNewCandle(Svecha newCandle) {
+        final int period = 22; // Период для расчета SMA
+        if (candlesticks.size() >= period) {
+            double sum = 0.0;
+            for (int i = candlesticks.size() - period; i < candlesticks.size(); i++) {
+                sum += candlesticks.get(i).getClose(); // Используем цену закрытия свечи
+            }
+            return sum / period; // Возвращаем среднее значение
+        } else {
+            return 0.0; // Если недостаточно данных, возвращаем 0 или другое подходящее значение
+        }
+    }
+
+
+    // Этот метод должен быть реализован вами для расчета полос Боллинджера для новой свечи
+    private Double[] calculateBollingerBandsForNewCandle(Svecha newCandle) {
+        // Ваш метод должен расчитывать SMA и стандартное отклонение на основе всего списка свечей
+        // Ниже примерный псевдокод, который нужно адаптировать под вашу логику расчета
+        final int period = 22; // примерный период для SMA и стандартного отклонения
+        final double k = 2.0; // множитель для стандартного отклонения
+        Double[] bollingerBands = new Double[3];
+
+        if (candlesticks.size() >= period) {
+            // Расчет SMA
+            double sum = 0.0;
+            for (int i = candlesticks.size() - period; i < candlesticks.size(); i++) {
+                sum += candlesticks.get(i).getClose(); // предполагается, что у Svecha есть метод getClose()
+            }
+            double sma = sum / period;
+//            bollingerBands[1] = sma; // средняя полоса
+
+            // Расчет стандартного отклонения
+            double squareSum = 0.0;
+            for (int i = candlesticks.size() - period; i < candlesticks.size(); i++) {
+                squareSum += Math.pow(candlesticks.get(i).getClose() - sma, 2);
+            }
+            double standardDeviation = Math.sqrt(squareSum / period);
+
+            // Расчет верхней и нижней полос
+            bollingerBands[0] = sma + (standardDeviation * k); // верхняя полоса
+            bollingerBands[1] = sma - (standardDeviation * k); // нижняя полоса
+        } else {
+
+
+
+            // Если свечей недостаточно для расчета, можно возвратить null или заполнить нулями
+            return null; // или new Double[]{0.0, 0.0, 0.0};
+        }
+
+        return bollingerBands;
+    }
+
+
+
+}
+
+
+
+package com.binance.connector.myyyyyFUTURE.MYTEST.visualizator.visualizator;
+
+import com.binance.connector.myyyyyFUTURE.bolinjer.BollingerBandsCalculator;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+
+
+import javax.swing.*;
+import java.util.List;
+
+public class VidoditelVOkno {
+
+   public CandlestickPropocianatorRisvalshik chart;
+
+//    private void runApplication(String coin) {
+    public void vivodVOkno(List<Svecha> candlesticks) {
+        // Считываем данные свечей из файла
+//        List<Svecha> candlesticks = CandlestickDataParser.readCandlesticksFromFile(coin);
+//
+//        // Проверяем успешность загрузки данных
+//        if (candlesticks == null || candlesticks.isEmpty()) {
+//            System.out.println("Не удалось загрузить данные свечей.");
+//            return;
+//        }
+
+        // Вычисляем Bollinger Bands и SMA
+        int period = 21; // Используем рекомендуемый период Bollinger Bands
+        List<Double[]> bollingerBands = BollingerBandsCalculator.calculateBollingerBands(candlesticks, period);
+        List<Double> smaValues = BollingerBandsCalculator.calculateSMA(candlesticks, period);
+
+        // Создаем и настраиваем окно приложения
+        JFrame frame = createApplicationFrame(candlesticks, bollingerBands, smaValues);
+        frame.setVisible(true);
+    }
+
+    private JFrame createApplicationFrame(List<Svecha> candlesticks, List<Double[]> bollingerBands, List<Double> smaValues) {
+        JFrame frame = new JFrame("Candlestick Chart with Bollinger Bands and SMA");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        chart = new CandlestickPropocianatorRisvalshik(candlesticks, bollingerBands, smaValues);
+
+        // Создаем JScrollPane и добавляем в него CandlestickChart
+        JScrollPane scrollPane = new JScrollPane(chart);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        frame.add(scrollPane); // Добавляем JScrollPane в JFrame
+
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        return frame;
+    }
+}
+
+package com.binance.connector.myyyyyFUTURE.parsery;
+
+
+
+import com.binance.connector.myyyyyFUTURE.GURU;
+import com.binance.connector.myyyyyFUTURE.PrivateConfig;
+
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+import org.json.JSONArray;
+import org.w3c.dom.ls.LSOutput;
+
+import java.awt.*;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+public class GetterAndParserSvechey {
+
+    public static void getVseSvechiizSpiska(List<String> oldMoneyZnak) {
+        for(String moneyPara : oldMoneyZnak){
+            getDlyaOndnoyPary22(moneyPara);
+        }
+    }
+
+    public static void getDlyaOndnoyPary22(String symbol){
+
+        String interval = PrivateConfig.TIMENG; // Интервал свечи: 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M
+        int limit = 22; // Количество свечей: 1-1500
+
+        // Выполняем запрос и получаем данные
+        String responseData = fetchCandlestickData(symbol, interval, limit);
+        // Если данные получены, записываем их в файл
+        System.out.println("11111111111");
+        if (responseData != null) {
+            writeDataToFile(symbol + ".txt", responseData); // тут формируеться же и имя докумета тхт //todo в будущем убрать - и куда ваще сохраняеться ?
+            System.out.println("22222222222222");
+            List<Svecha> svechi = parseSvechiFromResponse(responseData,symbol);
+
+            GURU.addOneMoneyAndHistorySvechey(symbol,svechi);
+            System.out.println("33333333333333333333");
+        }
+    }
+    /**
+     * Запрашивает данные свечей с Binance API.
+     *
+     * @param symbol Валютная пара для получения данных.
+     * @param interval Интервал времени для каждой свечи.
+     * @param limit Количество запрашиваемых свечей.
+     * @return Строка с данными свечей в формате JSON или null при ошибке.
+     */
+    private static String fetchCandlestickData(String symbol, String interval, int limit) {
+//        String urlString = "https://api.binance.com/api/v3/klines?symbol=" + symbol + "&interval=" + interval + "&limit=" + limit;
+        String urlString = "https://fapi.binance.com/fapi/v1/markPriceKlines?symbol=" + symbol + "&interval=" + interval + "&limit=" + limit;
+
+        try {
+            URL url = new URL(urlString);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+
+            InputStream responseStream = connection.getInputStream();
+            Scanner scanner = new Scanner(responseStream, StandardCharsets.UTF_8.name());
+            String responseData = scanner.useDelimiter("\\A").next(); // Используем сканер для чтения входящего потока
+            scanner.close();
+
+            return responseData;
+        } catch (IOException e) {
+            System.err.println("Ошибка при получении данных свечей в классе GetterAndParserSvechey - начало программы: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Записывает строку данных в файл.
+     *
+     * @param fileName Имя файла, в который будет произведена запись.
+     * @param data Строка данных для записи.
+     */
+    private static void writeDataToFile(String fileName, String data) {
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
+            writer.write(data); // Записываем данные в файл
+            writer.close();
+            System.out.println("Данные успешно записаны в файл " + fileName);
+        } catch (IOException e) {
+            System.err.println("Ошибка при записи данных в файл: " + e.getMessage());
+        }
+    }
+
+
+
+    public static List<Svecha> parseSvechiFromResponse(String responseData, String symbol) {
+        List<Svecha> svechi = new ArrayList<>();
+        JSONArray svechiJsonArray = new JSONArray(responseData);
+
+        for (int i = 0; i < svechiJsonArray.length(); i++) {
+            JSONArray svechaJson = svechiJsonArray.getJSONArray(i);
+            long openTime = svechaJson.getLong(0);
+            double open = svechaJson.getDouble(1);
+            double high = svechaJson.getDouble(2);
+            double low = svechaJson.getDouble(3);
+            double close = svechaJson.getDouble(4);
+
+            Color color = (close >= open) ? Color.GREEN : Color.RED;
+            svechi.add(new Svecha(color, symbol, openTime, open, high, low, close));
+        }
+
+        return svechi;
+    }
+
+}
+
+
+
+
+//    Ответ API Binance на запрос данных свечей (klines) включает следующую информацию для каждой свечи​​:
+//
+//        Open time: Время открытия свечи в миллисекундах с начала эпохи Unix.
+//        Open: Цена открытия.
+//        High: Максимальная цена за время свечи.
+//        Low: Минимальная цена за время свечи.
+//        Close (or latest price): Цена закрытия или последняя цена.
+//        Volume: Объем торгов за время свечи.
+//        Close time: Время закрытия свечи в миллисекундах с начала эпохи Unix.
+//        Base asset volume: Объем торгов основной валюты.
+//        Number of trades: Количество торгов.
+//        Taker buy volume: Объем покупок, совершенных по рыночной цене.
+//        Taker buy base asset volume: Объем покупок основной валюты, совершенных по рыночной цене.
+//        Ignore: Поле, которое можно игнорировать (обычно содержит значение "0").
+
+//
+//symbol=BTCUSDT: Это означает, что запрашиваются данные для валютной пары Bitcoin (BTC) и Tether (USDT).
+//
+//        interval=15m: Здесь указывается таймфрейм каждой свечи. 15m означает, что каждая свеча представляет собой данные за 15-минутный интервал.
+//
+//        limit=192: Этот параметр ограничивает количество возвращаемых свечей. В данном случае запрашивается 192 свечи. Если учитывать, что каждая свеча представляет 15 минут, то 192 * 15м дает вам данные за последние 48 часов (или 2 дня).
+package com.binance.connector.myyyyyFUTURE.parsery;
+
+import com.binance.connector.myyyyyFUTURE.sushnosty.Order;
+import com.binance.connector.myyyyyFUTURE.sushnosty.ValutnayaPara;
+import org.json.JSONObject;
+
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class Parser {
+    public static Order parseLinkedHashMapToOrder(LinkedHashMap<String, Object> map) {
+        Order order = new Order();
+        order.setOrderId((Long) map.getOrDefault("orderId", 0L));
+        order.setSymbol((String) map.getOrDefault("symbol", ""));
+        order.setCenaVhoda(Long.parseLong(map.getOrDefault("price", "0").toString()));
+        order.setCummulativeQuoteQty(Double.parseDouble(map.getOrDefault("cumQuote", "0.0").toString()));
+        order.setExecutedQty(Double.parseDouble(map.getOrDefault("executedQty", "0.0").toString()));
+        order.setStatus((String) map.getOrDefault("status", ""));
+        order.setSide((String) map.getOrDefault("side", ""));
+        order.setType((String) map.getOrDefault("type", ""));
+        return order;
+    }
+
+    public static void parseJsonResponseAndUpdateOrder(String jsonResponse, Order order) {
+        JSONObject jsonObject = new JSONObject(jsonResponse);
+        order.setOrderId(jsonObject.optLong("orderId", order.getOrderId()));
+        order.setSymbol(jsonObject.optString("symbol", order.getSymbol()));
+        order.setCenaVhoda(jsonObject.optDouble("price", order.getCenaVhoda()));
+        order.setCummulativeQuoteQty(jsonObject.optDouble("cumQuote", order.getCummulativeQuoteQty()));
+        order.setExecutedQty(jsonObject.optDouble("executedQty", order.getExecutedQty()));
+        order.setStatus(jsonObject.optString("status", order.getStatus()));
+        order.setSide(jsonObject.optString("side", order.getSide()));
+        order.setType(jsonObject.optString("type", order.getType()));
+    }
+
+
+
+
+
+
+
+    public static Map<String, ValutnayaPara> parsInfoPosleZapytoy(String fileName) {
+        String filePath = fileName; // Укажите правильный путь к файлу
+        Map<String, ValutnayaPara> map = parseFile(filePath);
+//        map.forEach((key, value) -> System.out.println(key + " => " + value));
+        return map;
+    }
+
+    public static Map<String, ValutnayaPara> parseFile(String filePath) {
+        Map<String, ValutnayaPara> resultMap = new HashMap<>();
+        try {
+            String content = new String(Files.readAllBytes(Paths.get(filePath)));
+            String[] pairs = content.split("\\r?\\n\\r?\\n\\r?\\n"); // Разделить на пары по двум пустым строкам
+
+            Pattern pattern = Pattern.compile("Symbol: (\\S+).*?Tick Size: (\\d+\\.\\d+).*?Step Size: (\\d+\\.\\d+)", Pattern.DOTALL);
+
+            for (String pair : pairs) {
+
+                Matcher matcher = pattern.matcher(pair);
+                if (matcher.find()) {
+                    String symbol = matcher.group(1);
+                    String tickSize = matcher.group(2);
+                    String stepSize = matcher.group(3);
+                    ValutnayaPara valutnayaPara = new ValutnayaPara(symbol, tickSize, stepSize);
+                    resultMap.put(symbol, valutnayaPara);
+
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return resultMap;
+    }
+
+
+}
+
+package com.binance.connector.myyyyyFUTURE.parsery;
+
+import com.binance.connector.myyyyyFUTURE.sushnosty.Order;
+import org.json.JSONObject;
+
+public class ParserOrderov {
+
+    public static Order parseOrder(String json) { //предпологаем что подходит на все три типа ордеров
+        JSONObject jsonObj = new JSONObject(json);
+
+        long orderId = jsonObj.getLong("orderId");
+        String symbol = jsonObj.getString("symbol");
+        double cummulativeQuoteQty = jsonObj.getDouble("cumQuote");
+        double executedQty = jsonObj.getDouble("executedQty");
+        String status = jsonObj.getString("status");
+        String side = jsonObj.getString("side");
+        String type = jsonObj.getString("type");
+
+        // Цена входа не указана в ответе, так что мы ставим ее в VistavlyatelStopITakeProffit
+
+        return new Order(symbol, orderId, cummulativeQuoteQty, executedQty, status, side, type);
+    }
+
+
+
+
+}
+
+package com.binance.connector.myyyyyFUTURE.parsery;
+
+import com.binance.connector.myyyyyFUTURE.sushnosty.OrderDTO;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public class ParserUserSoceta {
+
+    public static void parseAccountUpdate(String jsonData) {
+        System.out.println("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW parseAccountUpdate");
+
+        JSONObject jsonObj = new JSONObject(jsonData);
+        String eventType = jsonObj.getString("e");              // Тип события
+        long eventTime = jsonObj.getLong("E");                 // Время события
+        long transactionTime = jsonObj.getLong("T");           // Время транзакции
+        System.out.println("Event Type: " + eventType + ", Event Time: " + eventTime + ", Transaction Time: " + transactionTime);
+
+
+
+        JSONObject updateData = jsonObj.getJSONObject("a");
+        String eventReasonType = updateData.getString("m");    // Причина события
+        System.out.println("Event Reason Type: " + eventReasonType);
+
+
+        JSONArray balances = updateData.getJSONArray("B");
+        for (int i = 0; i < balances.length(); i++) {
+            JSONObject balance = balances.getJSONObject(i);
+            String asset = balance.getString("a");             // Актив
+            String walletBalance = balance.getString("wb");    // Баланс кошелька
+            String crossWalletBalance = balance.getString("cw");// Перекрестный баланс кошелька
+            String balanceChange = balance.getString("bc");    // Изменение баланса, за исключением PnL и комиссии
+            // Дополнительная обработка здесь
+            System.out.println("Asset: " + asset + ", Wallet Balance: " + walletBalance + ", Cross Wallet Balance: " + crossWalletBalance + ", Balance Change: " + balanceChange);
+
+        }
+
+
+        JSONArray positions = updateData.getJSONArray("P");
+        for (int i = 0; i < positions.length(); i++) {
+            JSONObject position = positions.getJSONObject(i);
+            String symbol = position.getString("s");           // Символ
+            String positionAmount = position.getString("pa");  // Количество в позиции
+            String entryPrice = position.getString("ep");      // Цена входа
+            String unrealizedPnL = position.getString("up");   // Нереализованный PnL
+            // Дополнительная обработка здесь
+            System.out.println("Symbol: " + symbol + ", Position Amount: " + positionAmount + ", Entry Price: " + entryPrice + ", Unrealized PnL: " + unrealizedPnL);
+
+        }
+
+        // Дополнительные действия после парсинга
+
+        System.out.println("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM");
+    }
+
+    public static OrderDTO handleOrderTradeUpdate(String jsonData) {
+        System.out.println("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW handleOrderTradeUpdate");
+        JSONObject jsonObj = new JSONObject(jsonData);
+//        String eventType = jsonObj.getString("e");              // Тип события
+//        long eventTime = jsonObj.getLong("E");                 // Время события
+//        long transactionTime = jsonObj.getLong("T");           // Время транзакции
+//        System.out.println("Event Type: " + eventType + ", Event Time: " + eventTime + ", Transaction Time: " + transactionTime);
+
+
+        JSONObject orderData = jsonObj.getJSONObject("o");
+        String symbol = orderData.getString("s");              // Символ  ////////////////////////////////////////////////////
+
+        String side = orderData.getString("S");                // Сторона (покупка/продажа)   /////////////////////////////////
+
+        String originalQuantity = orderData.getString("q");   // Исходное количество   ///////////////////////////////////////////
+
+        String orderStatus = orderData.getString("X");        // Статус ордера  ////////////////////////////////////////////////
+        long orderId = orderData.getLong("i");                // Идентификатор ордера  ///////////////////////////////////////////
+
+        // Дополнительная обработка здесь
+        System.out.println("Symbol: " + symbol + ", Side: " + side + " Original Quantity: " + originalQuantity +
+                ", Order Status: " + orderStatus + ", Order ID: " + orderId );
+        // Дополнительные действия после парсинга
+        System.out.println("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM");
+
+
+       return new OrderDTO(symbol,side,Double.parseDouble(originalQuantity),orderStatus,orderId);
+    }
+
+
+}
+
+
+////todo ниже предудущие полностью рабочии версии полные
+//System.out.println("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW parseAccountUpdate");
+//
+//        JSONObject jsonObj = new JSONObject(jsonData);
+//        String eventType = jsonObj.getString("e");              // Тип события
+//        long eventTime = jsonObj.getLong("E");                 // Время события
+//        long transactionTime = jsonObj.getLong("T");           // Время транзакции
+//        System.out.println("Event Type: " + eventType + ", Event Time: " + eventTime + ", Transaction Time: " + transactionTime);
+//
+//
+//
+//        JSONObject updateData = jsonObj.getJSONObject("a");
+//        String eventReasonType = updateData.getString("m");    // Причина события
+//        System.out.println("Event Reason Type: " + eventReasonType);
+//
+//
+//        JSONArray balances = updateData.getJSONArray("B");
+//        for (int i = 0; i < balances.length(); i++) {
+//        JSONObject balance = balances.getJSONObject(i);
+//        String asset = balance.getString("a");             // Актив
+//        String walletBalance = balance.getString("wb");    // Баланс кошелька
+//        String crossWalletBalance = balance.getString("cw");// Перекрестный баланс кошелька
+//        String balanceChange = balance.getString("bc");    // Изменение баланса, за исключением PnL и комиссии
+//        // Дополнительная обработка здесь
+//        System.out.println("Asset: " + asset + ", Wallet Balance: " + walletBalance + ", Cross Wallet Balance: " + crossWalletBalance + ", Balance Change: " + balanceChange);
+//
+//        }
+//
+//
+//        JSONArray positions = updateData.getJSONArray("P");
+//        for (int i = 0; i < positions.length(); i++) {
+//        JSONObject position = positions.getJSONObject(i);
+//        String symbol = position.getString("s");           // Символ
+//        String positionAmount = position.getString("pa");  // Количество в позиции
+//        String entryPrice = position.getString("ep");      // Цена входа
+//        String unrealizedPnL = position.getString("up");   // Нереализованный PnL
+//        // Дополнительная обработка здесь
+//        System.out.println("Symbol: " + symbol + ", Position Amount: " + positionAmount + ", Entry Price: " + entryPrice + ", Unrealized PnL: " + unrealizedPnL);
+//
+//        }
+//
+//        // Дополнительные действия после парсинга
+//
+//        System.out.println("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM");
+//        }
+//
+//public static void handleOrderTradeUpdate(String jsonData) {
+//        System.out.println("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW handleOrderTradeUpdate");
+//        JSONObject jsonObj = new JSONObject(jsonData);
+//        String eventType = jsonObj.getString("e");              // Тип события
+//        long eventTime = jsonObj.getLong("E");                 // Время события
+//        long transactionTime = jsonObj.getLong("T");           // Время транзакции
+//        System.out.println("Event Type: " + eventType + ", Event Time: " + eventTime + ", Transaction Time: " + transactionTime);
+//
+//
+//        JSONObject orderData = jsonObj.getJSONObject("o");
+//        String symbol = orderData.getString("s");              // Символ
+//        String clientOrderId = orderData.getString("c");       // Идентификатор клиентского ордера
+//        String side = orderData.getString("S");                // Сторона (покупка/продажа)
+//        String orderType = orderData.getString("o");           // Тип ордера
+//        String timeInForce = orderData.getString("f");        // Время действия ордера
+//        String originalQuantity = orderData.getString("q");   // Исходное количество
+//        String originalPrice = orderData.getString("p");      // Исходная цена
+//        String averagePrice = orderData.getString("ap");      // Средняя цена
+//        String stopPrice = orderData.getString("sp");         // Цена стоп-заявки
+//        String executionType = orderData.getString("x");      // Тип исполнения
+//        String orderStatus = orderData.getString("X");        // Статус ордера
+//        long orderId = orderData.getLong("i");                // Идентификатор ордера
+//        String lastFilledQuantity = orderData.getString("l"); // Последнее заполненное количество
+//        String filledAccumulatedQuantity = orderData.getString("z"); // Накопленное количество заполнения
+//        String lastFilledPrice = orderData.getString("L");    // Цена последнего заполнения
+//        // Дополнительная обработка здесь
+//        System.out.println("Symbol: " + symbol + ", Client Order ID: " + clientOrderId + ", Side: " + side + ", Order Type: " + orderType +
+//        ", Time in Force: " + timeInForce + ", Original Quantity: " + originalQuantity + ", Original Price: " + originalPrice +
+//        ", Average Price: " + averagePrice + ", Stop Price: " + stopPrice + ", Execution Type: " + executionType +
+//        ", Order Status: " + orderStatus + ", Order ID: " + orderId + ", Last Filled Quantity: " + lastFilledQuantity +
+//        ", Filled Accumulated Quantity: " + filledAccumulatedQuantity + ", Last Filled Price: " + lastFilledPrice);
+//        // Дополнительные действия после парсинга
+//        System.out.println("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM");
+//        }
+package com.binance.connector.myyyyyFUTURE.parsery;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ReaderMoney {
+    public List<String> readCurrencyPairsFromFile(String filePath) {
+        List<String> currencyPairs = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                currencyPairs.add(line.trim());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return currencyPairs;
+    }
+}
+
+package com.binance.connector.myyyyyFUTURE.parsery;
+
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+import org.json.JSONObject;
+
+public class SvecnoyParser {
+
+            public static Svecha parseSvecha(JSONObject jsonObj) {
+
+            JSONObject data = jsonObj.getJSONObject("data");
+            JSONObject k = data.getJSONObject("k");
+
+            String money = k.getString("s");
+            long openTime = k.getLong("t");
+            double open = k.getDouble("o");
+            double high = k.getDouble("h");
+            double low = k.getDouble("l");
+            double close = k.getDouble("c");
+
+            Color color = (close >= open) ? Color.GREEN : Color.RED;
+
+            return new Svecha(color,money, openTime, open, high, low, close);
+        }
+    }
+
+
+
+package com.binance.connector.myyyyyFUTURE;
+
+public final class PrivateConfig {
+    private PrivateConfig() {
+    }
+//    public static final String BASE_URL = "https://testnet.binance.vision";
+
+//    https://fapi.binance.com
+
+    public static final String BASE_URL = "https://api.binance.com";
+    public static final String API_KEY = "geAebd1x7d2xankftODNx5ByHi7m0hS4s7ailwtozPL2OG78CpyDExNfWDaQX4lf";
+    public static final String SECRET_KEY = "iAlGXXBHhP7NiwKpgiNJ3zGEjmvIB006V9FrkrjkGbnKhTFpIhxCaPsNdaix4Ue3";
+    public static final String PRIVATE_KEY_PATH = ""; // Key must be PKCS#8 standard
+    public static final String LISTEN_KEY = "1uN0eynLARhuQfWZbdONIO0BIwFM65xmi75jhJ2jHTFS5KKbw2zzz5cXQ6othzIP"; // Unnecessary if PRIVATE_KEY_PATH is used
+
+
+//    public static final String BASE_URL = "https://testnet.binancefuture.com";
+//    public static final String API_KEY = "7b0ec2bb8ef88dd7f8e6c3ab26e3ad53013658565a8d6d9bd16353bb1d130cb5";
+//    public static final String SECRET_KEY = "da9b0ccee6681685e85cdf5ffc13e4e8a896165d7937ee60299a6f633dad8cb1";
+
+
+
+
+    public static final String TESTNET_API_KEY = "7b0ec2bb8ef88dd7f8e6c3ab26e3ad53013658565a8d6d9bd16353bb1d130cb5";
+    public static final String TESTNET_SECRET_KEY = "da9b0ccee6681685e85cdf5ffc13e4e8a896165d7937ee60299a6f633dad8cb1"; // Unnecessary if TESTNET_PRIVATE_KEY_PATH is used
+    public static final String TESTNET_PRIVATE_KEY_PATH = ""; //Key must be PKCS#8 standard
+
+
+
+
+
+    public static final String MONEY_FILE = "C:\\USDT пары .txt";
+    public static final String TIMENG = "15m";
+    //    public static final String TIMENG = "15m";
+//    public static final String INFOOCYFRAHPOSLEZAPYTOY = "C:\\parsedPairsInfoFuture.txt";
+    public static final String INFOOCYFRAHPOSLEZAPYTOY = "C:\\parsedPairsInfoMONEYFUTURE.txt";
+
+    public static final int BOLIDJERPERIOD = 21;
+    public static final int NACHALNUYBALANS = 100;
+    public static final int NA_ODIN_ORDER_V_USDT = 6;
+
+
+    public static final double STOPLOSSVPROCENTAH = 0.35; //todo 0.35 = 35%
+    public static final double STOPLIMIDOSKOLKIUBYTOK = 0.37;
+
+
+
+    public static final int RASPARALELIVANYE_POTOKOV = 10; //todo
+
+
+    public static final int USLOVIEVIHODACOLSVECHEYINAMESTE = 4;
+    public static final int USLOVIYAVIHODAPROCENTSCITAEMUYNAMESTE = 3;
+
+    public static final int USLOVIYAVIHODAPODRYDZELENYH = 3;
+
+    public static final int SLMINIMCHTOBEGONETROGAT = 5; // todo можно больще так как все ради TP
+    public static final int TPMINIMUMCHOBEGONETROGAT = 2;
+
+
+    public static final int PRIEMLEMUYPROCENTDOBOLINJERA = 15;
+    public static final double OTSKOLKIRAZHVOSTDOLGHENBITBOLSHETRENDA = 0.8;
+    public static final double DOSKOLKIRAZHVOSTDOLGHENBITBOLSHETRENDA = 2.5;
+
+    public static final double PERESTANOVKATPPROCENTDOBAVKIKSMA = 2.0;
+
+
+
+
+
+
+
+
+//    Следуйте инструкциям официальной документации Spot API Key, чтобы заменить URL-адреса конечных точек API следующими значениями:
+//    Spot API URL
+//    Spot Test Network URL
+//    https://api.binance.com/api	https://testnet.binance.vision/api
+//    wss://stream.binance.com:9443/ws	wss://testnet.binance.vision/ws
+//    wss://stream.binance.com:9443/stream	wss://testnet.binance.vision/stream
+
+//    Spot API URL	Spot Test Network URL
+//    https://api.binance.com/api	https://testnet.binance.vision/api
+//    wss://ws-api.binance.com/ws-api/v3	wss://testnet.binance.vision/ws-api/v3
+//    wss://stream.binance.com:9443/ws	wss://testnet.binance.vision/ws
+//    wss://stream.binance.com:9443/stream	wss://testnet.binance.vision/stream
+}
+
+package com.binance.connector.myyyyyFUTURE.processory;
+
+
+import com.binance.connector.myyyyyFUTURE.PrivateConfig;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+
+public class AnalizeProcessor { //todo данные подкоректировать
+
+
+
+
+
+    public static boolean doBolinjera(Svecha svecha){
+
+      double sma = svecha.getSma();
+      double closePrice = svecha.getClose();
+
+      // Рассчитываем процентное отклонение от SMA
+      double deviation = Math.abs(closePrice - sma);
+      double percentDeviation = (deviation / closePrice) * 100;
+
+      // Возвращаем true, если отклонение составляет 15% или более
+      return percentDeviation >= PrivateConfig.PRIEMLEMUYPROCENTDOBOLINJERA;
+
+    }
+
+
+  public static boolean verhnuyiHvostChtonado(Svecha svecha) {
+    double dlinaVerhnegoHvosta = svecha.getHigh() - Math.max(svecha.getOpen(), svecha.getClose());
+    double smaValue = svecha.getSma();
+
+    // Проверяем, соответствует ли длина верхнего хвоста заданным пропорциям относительно SMA
+    return dlinaVerhnegoHvosta >= PrivateConfig.OTSKOLKIRAZHVOSTDOLGHENBITBOLSHETRENDA * smaValue && dlinaVerhnegoHvosta <= PrivateConfig.DOSKOLKIRAZHVOSTDOLGHENBITBOLSHETRENDA * smaValue;
+  }
+
+
+}
+
+package com.binance.connector.myyyyyFUTURE.processory;
+
+
+import com.binance.connector.myyyyyFUTURE.GURU;
+import com.binance.connector.myyyyyFUTURE.MYTEST.GURUTEST;
+import com.binance.connector.myyyyyFUTURE.MYTEST.ProcessorBirghiTEST;
+import com.binance.connector.myyyyyFUTURE.PrivateConfig;
+import com.binance.connector.myyyyyFUTURE.bolinjer.BollingerBandsCalculator;
+import com.binance.connector.myyyyyFUTURE.parsery.ParserUserSoceta;
+import com.binance.connector.myyyyyFUTURE.parsery.SvecnoyParser;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Order;
+import com.binance.connector.myyyyyFUTURE.sushnosty.OrderDTO;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Processor {
+
+
+    public void priemJsonZakrytyhSvechey(JSONObject jsonSvechaZakrytaya) {
+
+        Svecha svecha = SvecnoyParser.parseSvecha(jsonSvechaZakrytaya);
+        String symbol = svecha.money;
+
+        // метод добавления свечи
+        List<Svecha> tekushuyList = addSvecha(symbol, svecha);
+
+        //Обдейтим свечу боленджерам
+        addLineBolinjer(tekushuyList); // todo тут можно чистить листы - ДОБАВИТЬ
+        //Текущая свеча - полна - вместе с боленджарами
+
+        if (GURU.getRunTimeOrders().containsKey(symbol)) {
+            boolean neMolot = ProcessorUsloviiVihoda.proverkaNaMolotRV(svecha);
+            boolean neTopchimsyaNaMeste = ProcessorUsloviiVihoda.neTopchimsyaNamesteVerhnayPolovina(symbol, tekushuyList, PrivateConfig.USLOVIEVIHODACOLSVECHEYINAMESTE, PrivateConfig.USLOVIYAVIHODAPROCENTSCITAEMUYNAMESTE);
+            boolean neNeskolkoPodryadZelenuh = ProcessorUsloviiVihoda.neskolkoPodryadZelenuh(tekushuyList, symbol, PrivateConfig.USLOVIYAVIHODAPODRYDZELENYH); //
+            if (neMolot && neTopchimsyaNaMeste && neNeskolkoPodryadZelenuh) { // todo перерорверить условия
+                double procentDoTP = ProcessorUsloviiVihoda.procentDoTP(svecha, symbol);
+                if (procentDoTP > PrivateConfig.TPMINIMUMCHOBEGONETROGAT) { //если больше в процентах - не близко к ТП то подтягиваем ТП
+                    ProcessorPerestonovkiSLiTP.perestanovkaTkeProfita(symbol, svecha);
+                }
+            } else {
+
+                ProcessorZakruvator.zakrytVSEOrderaMonety(symbol);    //todo закрываем все что связанос позицией
+
+            }
+        }
+
+
+        if (AnalizeProcessor.verhnuyiHvostChtonado(svecha)) { // todo везде проверить финасы - что убавлються - потом проверить что прибовляються при обновлении информации
+            if (AnalizeProcessor.doBolinjera(svecha)) {
+                //todo добавить проверку что позиции в sell еще нету - что бы повторно не купить если стоп не дошел грамм - а патрн как повторился - проверить есть ли возможность у патерна повторяься.
+                Order orderRunTime = zahodVShellPoziciyu(symbol, svecha); //todo выставили рантайм ордер
+                VistavlyatelStopITakeProffit.createForLineTakeAndStopAndADDSet(orderRunTime, svecha); //todo  ОСО и стоп
+
+            }
+        }
+
+
+    }
+
+
+    public void priemDannyhPolzovatelya(String dannyeOtSoceta) { //todo многопоток ее могут начат читать  пока она записываься - ИСПРАВИТЬ В БУДУЩЕМ
+        JSONObject jsonObj = new JSONObject(dannyeOtSoceta);
+        String eventType = jsonObj.getString("e");
+
+        switch (eventType) {
+
+            case "ORDER_TRADE_UPDATE":
+                System.out.println("Тип события ORDER_TRADE_UPDATE " + eventType);// Парсинг обновления ордера
+                OrderDTO orderDTO = ParserUserSoceta.handleOrderTradeUpdate(dannyeOtSoceta);
+                procesPriInfoObOrdere(orderDTO);
+                break;
+            case "ACCOUNT_UPDATE":
+                System.out.println("Тип события ACCOUNT_UPDATE " + eventType);// Парсинг обновления аккаунта
+                ParserUserSoceta.parseAccountUpdate(dannyeOtSoceta);
+                break;
+            case "OUTBOUND_ACCOUNT_POSITION":
+                System.out.println("Тип события OUTBOUND_ACCOUNT_POSITION ---------------------------------------------------==================== " + eventType);// Парсинг обновления баланса
+                break;
+            // Дополнительные типы сообщений
+            default:
+                System.out.println("Неизвестный тип события: " + eventType);
+                break;
+        }
+    }
+
+//после открытия рантайм  {"e":"ACCOUNT_UPDATE","T":1704388422171,"E":1704388422173,"a":{"B":[{"a":"USDT","wb":"19.27388055","cw":"19.27388055","bc":"0"}],"P":[{"s":"ACHUSDT","pa":"300","ep":"0.02","cr":"-0.02783998","up":"-0.00300000","mt":"cross","iw":"0","ps":"BOTH","ma":"USDT","bep":"0.02001"}],"m":"ORDER"}}
+//после закрытия вторым рантайм в другую сторону {"e":"ACCOUNT_UPDATE","T":1704388431285,"E":1704388431287,"a":{"B":[{"a":"USDT","wb":"19.26788205","cw":"19.26788205","bc":"0"}],"P":[{"s":"ACHUSDT","pa":"0","ep":"0","cr":"-0.03083998","up":"0","mt":"cross","iw":"0","ps":"BOTH","ma":"USDT","bep":"0"}],"m":"ORDER"}}
+    //s: Символ торговой пары (например, "ACHUSDT"). //закрыл в рантайме -рантаймом
+//        c: Клиентский ID ордера.
+//        S: Сторона ордера ("SELL" в данном случае).
+//        o: Тип ордера ("MARKET").
+//        q: Количество (например, "300").
+//        x и X: Текущее состояние ордера (в данном случае "NEW" и затем "FILLED", что означает, что ордер был исполнен).
+//        i: ID ордера на бирже.
+//        ap: Средняя цена исполнения ордера.
+//        n: Комиссия за сделку.
+//        N: Валюта комиссии ("USDT").
+//        t: ID торговой сделки на бирже.
+//        rp: Реализованная прибыль или убыток по ордеру.
+
+    //и там же
+//    B (Балансы):
+
+//    Этот раздел содержит информацию о вашем балансе в различных валютах.
+//    Каждый элемент в списке B содержит следующие поля:
+//    a: Валюта (например, "USDT").
+//    wb: Общий баланс в этой валюте на вашем счете.
+//    cw: Доступный для вывода баланс в этой валюте.
+//            bc: Баланс, используемый в текущих открытых позициях.
+//            P (Позиции):
+//
+//    Этот раздел содержит информацию о ваших текущих позициях в различных торговых парах.
+//    Каждый элемент в списке P содержит следующие поля:
+//    s: Символ торговой пары (например, "ACHUSDT").
+//    pa: Текущее количество (или объем) в позиции.
+//    ep: Средняя цена входа в позицию.
+//            cr: Ставка финансирования (если применимо).
+//    up: Нереализованная прибыль или убыток по данной позиции.
+//            mt: Тип маржи (например, "cross" для кросс-маржи).
+//    iw: Замороженная сумма на марже.
+//    ps: Тип позиции (например, "BOTH").
+//    ma: Валюта маржи (например, "USDT").
+
+    //        System.out.println("Результат арифметической нагрузки: " + result);
+
+    public void procesPriInfoObOrdere(OrderDTO orderDTO) {
+
+        if (orderDTO.orderStatus.equals("FILLED") && orderDTO.side.equals("BUY")) { // реагируем только на завершенне и в покупку - тоесть против нашего рантайма - ордера
+
+            String symbol = orderDTO.symbol;
+            long orderId = orderDTO.orderId;
+
+
+            Order takeProfitOrder = GURU.getTakeProfitOrders().get(symbol);
+            Order runTimeOrder = GURU.getRunTimeOrders().get(symbol);
+            Order stopLossOrder = GURU.getStopLossOrders().get(symbol);
+
+            if (takeProfitOrder != null && takeProfitOrder.getOrderId() == orderId) {
+                orderDTO.setTip("TAKEPROFIT");
+            } else if (runTimeOrder != null && runTimeOrder.getOrderId() == orderId) {
+                orderDTO.setTip("RUNTIME");
+            } else if (stopLossOrder != null && stopLossOrder.getOrderId() == orderId) {
+                orderDTO.setTip("STOPLOSS");
+            }else {
+                orderDTO.setTip("LEVUYTIP");
+            }
+
+
+            //todo провверить что везде ложаться при создний в ордер менеджере
+            if (orderDTO.getTip().equals("TAKEPROFIT")) { //todo бывает только в верхней половине
+                double cenaSrabotavshegoTP =  GURU.getTakeProfitOrders().get(symbol).getCenaVhoda();
+                GURU.getTakeProfitOrders().remove(symbol); //todo удаляем тейк профит из листа - его заменит стоплосс ниже - чуть выше сма
+
+                double vOrdereColichestvo =  GURU.getRunTimeOrders().get(symbol).colichestvoCuplennuhMonet; //todo сетим число монет в рантайме
+                GURU.getRunTimeOrders().get(symbol).colichestvoCuplennuhMonet = vOrdereColichestvo - orderDTO.originalQuantity; // перепроверить правильное ли значение приходит в тейкпрояит при егсиполнении 50% должно быть
+
+
+                double dobavka = cenaSrabotavshegoTP * (PrivateConfig.PERESTANOVKATPPROCENTDOBAVKIKSMA / 100.0); // Рассчитываем 2% от цены
+                double novayaCena = cenaSrabotavshegoTP + dobavka; // Прибавляем 2% к начальной цене
+
+                GURU.orderManager.creatMARKETOrderStopLoss(symbol,vOrdereColichestvo,novayaCena); //todo создаем новый стоп за место тейка тоже на 50%
+                GURU.orderManager.cancelOrder(symbol,GURU.getStopLossOrders().get(symbol).getOrderId());//todo удаляем старый стоп имет ли смыслы строка сверху или снизу этой ??
+
+                //todo при создании нового ордера стоп старый в ГУРУ сам долджен затерется.
+
+
+
+
+
+            } else if (orderDTO.getTip().equals("RUNTIME")) { //todo просматриваем и кенселим все стопы и тейки
+                GURU.getRunTimeOrders().remove(symbol);
+
+                    if(GURU.getStopLossOrders().containsKey(symbol)){ //
+                        Order tecuhiySTOrder = GURU.getStopLossOrders().get(symbol);//
+                        GURU.orderManager.cancelOrder(symbol,tecuhiySTOrder.getOrderId());//todo отменяем текущий СТОП ордер
+
+                        GURU.getStopLossOrders().remove(symbol);
+                        }
+                    if (GURU.getTakeProfitOrders().containsKey(symbol)){
+                        Order tecuhiyTPOrder = GURU.getTakeProfitOrders().get(symbol);
+                        GURU.orderManager.cancelOrder(symbol,tecuhiyTPOrder.getOrderId()); //todo отменяем текущий ПРОФИТ ордер
+
+                        GURU.getTakeProfitOrders().remove(symbol);
+                        }
+
+
+
+
+            } else if (orderDTO.getTip().equals("STOPLOSS")) { //todo  - рантайм будет сам леквидирован независимо от половины низ или вверх               // todo в будещем поставить просто елсе
+                GURU.getStopLossOrders().remove(symbol);
+
+                if(GURU.getTakeProfitOrders().containsKey(symbol)){
+
+                   long idTekushegoTPOrdera = GURU.getTakeProfitOrders().get(symbol).getOrderId();
+                   GURU.orderManager.cancelOrder(symbol,idTekushegoTPOrdera);
+                   GURU.getTakeProfitOrders().remove(symbol);
+
+                }
+
+
+
+            }
+
+
+        }
+
+    }
+
+
+    ///todo/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    public static void processAccountUpdate(JSONObject jsonEvent) {
+        System.out.println("Внутри processAccountUpdate");
+        System.out.println(jsonEvent.toString(2));
+        JSONArray balances = jsonEvent.getJSONArray("B");
+        for (int i = 0; i < balances.length(); i++) {
+            JSONObject balance = balances.getJSONObject(i);
+            String asset = balance.getString("a"); // Актив
+            String free = balance.getString("f"); // Свободный баланс
+            String locked = balance.getString("l"); // Заблокированный баланс
+            System.out.println("processAccountUpdate--v");
+            System.out.println("Asset: " + asset + ", Free: " + free + ", Locked: " + locked);
+        }
+    }
+
+    public static synchronized void processOrderUpdate(JSONObject jsonEvent) {  //todo сюда прилетает инфа при закрытии осо ордера
+        System.out.println("Внутри processOrderUpdate");
+        System.out.println(jsonEvent.toString(2));
+        try {
+            System.out.println("В методе processOrderUpdate 1");
+            String symbol = jsonEvent.getString("s"); // Символ
+            System.out.println("В методе processOrderUpdate 2");
+
+            // Изменение здесь: читаем orderId как число, а затем преобразуем в строку
+            int orderIdInt = jsonEvent.getInt("i"); // ID ордера как число
+            String orderId = String.valueOf(orderIdInt); // Преобразование числа в строку
+
+            System.out.println("В методе processOrderUpdate 3");
+            String orderStatus = jsonEvent.getString("X"); // Статус ордера
+            System.out.println("В методе processOrderUpdate 4");
+            String orderType = jsonEvent.getString("o"); // Тип ордера
+            System.out.println("processOrderUpdate--v");
+            System.out.println("Order Update - Symbol: " + symbol + ", OrderId: " + orderId + ", Status: " + orderStatus + ", Type: " + orderType);
+            //todo логика обработки срабатывание осо ордера(оно же и для стоп лимит) ниже "STOP_LOSS_LIMIT" - стоп лосс, "LIMIT_MAKER" - тейк профит ... STOP_LOSS_LIMIT - простой стоплосс такой же тип - значит при закрыти стоп лоса сюда прилитит два ордера
+            //todo обновить балас
+
+//            if(orderStatus.equals("FILLED")){ // если статус исполнен
+//                if(orderType.equals("STOP_LOSS_LIMIT")){ //todo хорошая точка для захода повторно в   позицию так как закрылось по стопу - СРАБОТАЛ СТОП
+//                    GURU.getTekushueOcoOrdera().remove(symbol);
+//                    GURU.getStopLImitMargOrders().remove(symbol);
+//                    GURU.getRunTimeOrders().remove(symbol);
+//
+//
+//
+//                }else if(orderType.equals("LIMIT_MAKER")){ //todo это тейк профит
+//                    //todo кенсел отложенный ордер стоплос
+//                    GURU.getStopLImitMargOrders().remove(symbol);
+//                    //todo новый отложенный ордер стоп на сма
+//                    //todo добавляем его в гуру
+//                }
+////               //todo где выходим из рантайм ордера  - тами дергаем лдогику - кансел ордер для всех отложенных -(обработь ошибки так как снизу осо уже не будет)
+//
+////todo рантайм мы тоже же закрываем и получаем сигнал - но он тут не нужен
+//
+//
+//            }
+
+
+////            Order Update - Symbol: ACHUSDT, OrderId: 318560102, Status: FILLED, Type: LIMIT_MAKER  тайк профит сработал
+////            Order Update - Symbol: ACHUSDT, OrderId: 318560101, Status: EXPIRED, Type: STOP_LOSS_LIMIT стоп лос удален
+            //todo логика обработки срабатывание осо ордера(оно же и для стоп лимит) выше
+        } catch (JSONException e) {
+            System.out.println("Ошибка при работе с JSON: " + e.getMessage());
+            e.printStackTrace();
+        } catch (Exception e) {
+            System.out.println("Непредвиденная ошибка: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+
+    ////    "e": "executionReport",
+////            "X": "NEW",
+////            "s": "ACHUSDT",
+////            "i": 318083565,
+////            "o": "LIMIT",
+////
+////
+////            "e": "executionReport",
+////            "X": "NEW",
+////            "s": "ACHUSDT",
+////            "i": 318083565,
+////            "o": "LIMIT",
+//
+//
+//
+    public static void processOcoOrderUpdate(JSONObject jsonEvent) {
+        try {
+            System.out.println("processOcoOrderUpdate");
+            System.out.println(jsonEvent.toString(2));
+            String listStatusType = jsonEvent.getString("l"); // Статус списка
+            String listOrderStatus = jsonEvent.getString("L"); // Статус ордеров в списке
+            JSONArray orders = jsonEvent.getJSONArray("O"); // Массив ордеров
+
+            System.out.println("processOcoOrderUpdate1--V");
+            System.out.println("OCO Order Update - List Status: " + listStatusType + ", Order Status: " + listOrderStatus);
+
+            for (int i = 0; i < orders.length(); i++) {
+                JSONObject order = orders.getJSONObject(i);
+                String symbol = order.getString("s"); // Символ
+
+                // Измените эту строку
+                int orderIdInt = order.getInt("i"); // ID ордера как число
+                String orderId = String.valueOf(orderIdInt); // Преобразование числа в строку
+
+                System.out.println("processOcoOrderUpdate2--V");
+                System.out.println("Order - Symbol: " + symbol + ", OrderId: " + orderId);
+            }
+
+        } catch (JSONException e) {
+            System.out.println("Ошибка при работе с JSON: " + e.getMessage());
+            e.printStackTrace();
+        } catch (Exception e) {
+            System.out.println("Непредвиденная ошибка: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+
+    public static void processBalanceUpdate(JSONObject jsonEvent) {
+        System.out.println("processBalanceUpdate");
+        System.out.println("Обработка события обновления баланса");
+
+        try {
+            // Получение данных из JSON-объекта
+            String asset = jsonEvent.getString("a"); // Актив
+            String delta = jsonEvent.getString("d"); // Изменение баланса
+            long timestamp = jsonEvent.getLong("T"); // Временная метка события
+
+            // Вывод информации в консоль
+            System.out.println("Актив: " + asset + ", Изменение баланса: " + delta + ", Время события: " + timestamp);
+
+            // Здесь может быть дополнительная логика обработки события
+
+        } catch (JSONException e) {
+            System.out.println("Ошибка при работе с JSON: " + e.getMessage());
+            e.printStackTrace();
+        } catch (Exception e) {
+            System.out.println("Непредвиденная ошибка: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+    private static void handleOtherEvents(JSONObject jsonEvent) {
+        System.out.println("Внутри handleOtherEvents");
+        System.out.println(jsonEvent.toString(2));
+        // Обработка других типов событий...
+        // Пример: вывод информации о событии
+        String eventType = jsonEvent.getString("e");
+        System.out.println("Обработка события типа: " + eventType);
+        // Дополнительная логика обработки событий...
+    }
+
+
+//    public static void lisenBalanceAndOrders(String event) { //todo проверить используеться ли.
+//        System.out.println("В методе lisenBalanceAndOrders");
+//        JSONObject jsonEvent = new JSONObject(event);
+//        String eventType = jsonEvent.getString("e");
+//
+//        if ("outboundAccountPosition".equals(eventType)) {
+//            JSONArray balances = jsonEvent.getJSONArray("B");
+//            for (int i = 0; i < balances.length(); i++) {
+//                JSONObject balance = balances.getJSONObject(i);
+//                String asset = balance.getString("a");
+//                String free = balance.getString("f");
+//                String locked = balance.getString("l");
+//                // Дальнейшая обработка данных баланса
+//
+//                System.out.println(asset + " ++++++ "+ free + " +++++++++ "+locked);
+//            }
+//        }
+//        // Обработка других типов событий...
+//    }
+//=============----------------------==============================----------------------------------=====================
+
+    public Order zahodVShellPoziciyu(String symbol, Svecha svecha) {
+//        return OrderManager.marketMarginOrderShell(simbol, svecha.getClose(), PrivateConfig.NA_ODIN_ORDER_V_USDT);
+        double quantity = (PrivateConfig.NA_ODIN_ORDER_V_USDT / svecha.getClose());
+        double ocruglenuyQuantitySuchetomMonety = GURU.ocruglitel(quantity, GURU.getMapPosleZapytoy().get(symbol).cifrPosleZapytoyDlyaLotaVoVTOROYMONETE);
+        Order order = GURU.orderManager.createMarketOrder(symbol, "SELL", ocruglenuyQuantitySuchetomMonety,false);
+        order.setCenaVhoda(svecha.getClose());
+        return order;
+    }
+
+
+    public List<Svecha> addSvecha(String symbol, Svecha svecha) {
+        List<Svecha> tekushuyList = GURU.getHistorySvecheyOnSybol(symbol);
+        tekushuyList.add(svecha); //todo решить пробему с переполнением - в промежутке между свечами
+        return tekushuyList;
+    }
+
+
+    public Svecha addLineBolinjer(List<Svecha> listSvechey) {
+
+        Svecha poslednayaSvecha = listSvechey.get(listSvechey.size() - 1);
+
+        // Вычисляем SMA и линии Боллинджера
+        List<Double> smaValues = BollingerBandsCalculator.calculateSMA(listSvechey, PrivateConfig.BOLIDJERPERIOD);
+        List<Double[]> bollingerBands = BollingerBandsCalculator.calculateBollingerBands(listSvechey, PrivateConfig.BOLIDJERPERIOD);
+
+
+        // Получаем значения для последней свечи
+        //сетим в свечу сма
+        poslednayaSvecha.setSma(smaValues.get(smaValues.size() - 1));
+
+        // Верхняя и нижняя линии
+        Double[] lastBollingerBand = bollingerBands.get(bollingerBands.size() - 1);
+        poslednayaSvecha.setUpBolinjer(lastBollingerBand[0]);
+        poslednayaSvecha.setDownBolinjer(lastBollingerBand[1]);
+
+        return poslednayaSvecha;
+    }
+
+
+
+    public void TestmetodPriemkaCvechi(Svecha svecha){
+        System.out.println(svecha.getOpenTime());
+
+
+
+
+
+
+
+
+
+        String symbol = svecha.money;
+
+        // метод добавления свечи
+        List<Svecha> tekushuyList = addSvecha(symbol, svecha);
+
+        //Обдейтим свечу боленджерам
+//        addLineBolinjer(tekushuyList); // todo тут можно чистить листы - ДОБАВИТЬ
+        //Текущая свеча - полна - вместе с боленджарами
+//
+//        if (GURU.getRunTimeOrders().containsKey(symbol)) {
+//            boolean neMolot = ProcessorUsloviiVihoda.proverkaNaMolotRV(svecha);
+//            boolean neTopchimsyaNaMeste = ProcessorUsloviiVihoda.neTopchimsyaNamesteVerhnayPolovina(symbol, tekushuyList, PrivateConfig.USLOVIEVIHODACOLSVECHEYINAMESTE, PrivateConfig.USLOVIYAVIHODAPROCENTSCITAEMUYNAMESTE);
+//            boolean neNeskolkoPodryadZelenuh = ProcessorUsloviiVihoda.neskolkoPodryadZelenuh(tekushuyList, symbol, PrivateConfig.USLOVIYAVIHODAPODRYDZELENYH); //
+//            if (neMolot && neTopchimsyaNaMeste && neNeskolkoPodryadZelenuh) { // todo перерорверить условия
+//                double procentDoTP = ProcessorUsloviiVihoda.procentDoTP(svecha, symbol);
+//                if (procentDoTP > PrivateConfig.TPMINIMUMCHOBEGONETROGAT) { //если больше в процентах - не близко к ТП то подтягиваем ТП
+//                    ProcessorPerestonovkiSLiTP.perestanovkaTkeProfita(symbol, svecha);
+//                }
+//            } else {
+//
+//                ProcessorZakruvator.zakrytVSEOrderaMonety(symbol);    //todo закрываем все что связанос позицией
+//
+//            }
+//        }
+
+
+//        if (AnalizeProcessor.verhnuyiHvostChtonado(svecha)) { // todo везде проверить финасы - что убавлються - потом проверить что прибовляються при обновлении информации
+//            if (AnalizeProcessor.doBolinjera(svecha)) {
+//                //todo добавить проверку что позиции в sell еще нету - что бы повторно не купить если стоп не дошел грамм - а патрн как повторился - проверить есть ли возможность у патерна повторяься.
+//                Order orderRunTime = zahodVShellPoziciyu(symbol, svecha); //todo выставили рантайм ордер
+//                VistavlyatelStopITakeProffit.createForLineTakeAndStopAndADDSet(orderRunTime, svecha); //todo  ОСО и стоп
+//
+//            }
+//        }
+//
+
+
+
+
+
+
+
+
+
+
+
+        testMetodOtpravkaOrderovNaSerber();
+    }
+
+    public void testMetodOtpravkaOrderovNaSerber(){
+        List<Order> orderaNaServer = new ArrayList<>();
+        GURUTEST.processorBirghiTEST.priemkaObrabotkaOrderov(orderaNaServer);
+    }
+
+}
+
+package com.binance.connector.myyyyyFUTURE.processory;
+
+
+import com.binance.connector.myyyyyFUTURE.GURU;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Order;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+
+public class ProcessorPerestonovkiSLiTP {
+//todo АТОМАРНОСТЬ - спросить потдержки
+
+    public static void perestanovkaTkeProfita(String symbol, Svecha svecha) {//todo на второй половине подтягивать стоп лосс ?
+
+        Order orderNaUdalenye = GURU.getTakeProfitOrders().get(symbol);
+
+        GURU.orderManager.cancelOrder(symbol, orderNaUdalenye.getOrderId());
+
+        Order newTPOrder = GURU.orderManager.creatMARKETrderTakeProfit(symbol, orderNaUdalenye.getCummulativeQuoteQty(), svecha.getSma()); //getCummulativeQuoteQty все верно ?
+        newTPOrder.setCenaVhoda(svecha.getSma());
+
+        GURU.getTakeProfitOrders().put(symbol, newTPOrder);
+
+
+    }
+
+    public static void perestonovkaStopLossa() { //когла сработал профит - удаляем два старых(сверху) стопа - и ставим новый ЧУТЬ выше сма
+
+    }
+
+
+}
+
+
+package com.binance.connector.myyyyyFUTURE.processory;
+
+import com.binance.connector.myyyyyFUTURE.GURU;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Order;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+
+import java.awt.*;
+import java.util.List;
+
+//todo не сработает на нижней половине!!!!!!!!!!!!!!!!!Доделать
+public class ProcessorUsloviiVihoda { //todo что бы не было условй выхода все должны быть тру
+
+    public static boolean neTopchimsyaNamesteVerhnayPolovina(String symbol, List<Svecha> tekuhuyList, int kolichestvoSvechey, int procentDlyaVihoda) {
+        Order orderRunTime = GURU.getRunTimeOrders().get(symbol);
+        double cenaZakrutyaSvechi = tekuhuyList.get(tekuhuyList.size() - 1).getClose();
+        double cenaVhoda = orderRunTime.getCenaVhoda();
+
+        if (++orderRunTime.kakayaPoshetuSvecha >= kolichestvoSvechey && cenaVhoda - cenaVhoda * procentDlyaVihoda <= cenaZakrutyaSvechi) { //todo счетчик свечей в ордере Рантайм
+            return false;
+        }
+        return true;
+    }
+
+    public static boolean proverkaNaMolotRV(Svecha svecha) {
+
+        double telo = Math.abs(svecha.getClose() - svecha.getOpen()); // Размер тела свечи
+        double nizhniyHvost = Math.min(svecha.getOpen(), svecha.getClose()) - svecha.getLow(); // Нижний хвост
+        double verhniyHvost = svecha.getHigh() - Math.max(svecha.getOpen(), svecha.getClose()); // Верхний хвост
+
+        // Проверяем, соответствует ли свеча критериям молота
+        if (nizhniyHvost >= 1.5 * telo && verhniyHvost <= telo) {
+            return false; // Свеча является молотом
+        }
+        return true; // Свеча не является молотом
+    }
+
+    public static boolean neskolkoPodryadZelenuh(List<Svecha> tekuhuyList, String symbol, int podrydZelenyh) {
+        Order orderRunTime = GURU.getRunTimeOrders().get(symbol);
+        int tecushayaSvechaNomber = orderRunTime.kakayaPoshetuSvecha;
+
+        if (tecushayaSvechaNomber < podrydZelenyh) {
+            return true;
+        }
+
+        int index = tekuhuyList.size() - 1;
+        int schetchikSovpadenyiZEL = 0;
+
+        for (int i = tecushayaSvechaNomber; i > 0; i--) {
+            if (tekuhuyList.get(index--).getColor().equals(Color.RED)) {
+                schetchikSovpadenyiZEL = 0;
+            } else {
+                if (podrydZelenyh == ++schetchikSovpadenyiZEL) {//todo проверить присоение;
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+
+    public static int procentDoSL(Svecha poslednyaSvecha, String symbol) {
+        double stopLossCena = 0;
+        try {
+            stopLossCena = GURU.getStopLossOrders().get(symbol).getCenaVhoda();
+        } catch (Exception e) {
+            return 0;  //todo если мы в жней части там уже нет ОСО - возвращаем 0 - что бы не рсаболи условия перестановки
+        }
+
+        double tekushayaCena = poslednyaSvecha.getClose();
+        return (int) (((stopLossCena - tekushayaCena) / tekushayaCena) * 100);//todo кастим
+    }
+
+
+    public static double procentDoTP(Svecha poslednyaSvecha, String symbol) {
+        Order order = GURU.getTakeProfitOrders().get(symbol);
+        double cenaTakeProfit = order.getCenaVhoda();
+        double sma = poslednyaSvecha.getSma();
+
+        double raznicaVProcentah = ((cenaTakeProfit - sma) / sma) * 100;
+        return Math.abs(raznicaVProcentah);
+    }
+}
+package com.binance.connector.myyyyyFUTURE.processory;
+
+
+import com.binance.connector.myyyyyFUTURE.GURU;
+
+public class ProcessorZakruvator { //todo проверить все методы
+
+    public static void zakrytVSEOrderaMonety(String symbol) {
+
+        if (GURU.getRunTimeOrders().containsKey(symbol)) {
+
+            double skolichestvoMonet = GURU.getRunTimeOrders().get(symbol).getCummulativeQuoteQty();
+
+            GURU.orderManager.createMarketOrder(symbol,"BUY",skolichestvoMonet,true);
+
+            GURU.getRunTimeOrders().remove(symbol);
+        }
+
+        if (GURU.getTakeProfitOrders().containsKey(symbol)) {
+
+            long id = GURU.getTakeProfitOrders().get(symbol).getOrderId();
+            GURU.orderManager.cancelOrder(symbol,id);
+
+
+            GURU.getTakeProfitOrders().remove(symbol);
+        }
+
+        if (GURU.getStopLossOrders().containsKey(symbol)) {
+
+            long id = GURU.getStopLossOrders().get(symbol).getOrderId();
+            GURU.orderManager.cancelOrder(symbol,id);
+
+
+            GURU.getStopLossOrders().remove(symbol);
+        }
+        }
+
+    }
+
+
+
+package com.binance.connector.myyyyyFUTURE.processory;
+
+
+import com.binance.connector.myyyyyFUTURE.GURU;
+import com.binance.connector.myyyyyFUTURE.PrivateConfig;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Order;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+
+public class VistavlyatelStopITakeProffit {
+
+    public static boolean createForLineTakeAndStopAndADDSet(Order orderRunTime, Svecha svecha) {
+
+
+        String symbol = orderRunTime.getSymbol();
+
+        double quantity50 = (orderRunTime.getCummulativeQuoteQty() / 2);
+        double ocruglenuyQuantitySuchetomMonety50 = GURU.ocruglitel(quantity50, GURU.getMapPosleZapytoy().get(symbol).cifrPosleZapytoyDlyaLotaVoVTOROYMONETE);
+
+        double nizHvosta = Math.max(svecha.getOpen(), svecha.getClose());
+        double pribavkaKNizuHvosta = (svecha.getHigh() - nizHvosta) * PrivateConfig.STOPLOSSVPROCENTAH;
+
+        double stopLoss = nizHvosta + pribavkaKNizuHvosta;
+        double doSkolkiGotovyBratUbytok = stopLoss + (stopLoss * (PrivateConfig.STOPLIMIDOSKOLKIUBYTOK - PrivateConfig.STOPLOSSVPROCENTAH));
+
+        double takeProfit = svecha.getSma(); // todo нужен только в верхней половине
+//        double takeProfitTwo = svecha.getDownBolinjer();
+
+        Order orderStop = (GURU.orderManager.creatMARKETOrderStopLoss(symbol, orderRunTime.getCummulativeQuoteQty(), stopLoss));
+        orderStop.setCenaVhoda(stopLoss);
+        GURU.addStopLossOrder(orderStop); //todo переделать потом в менеджере на человечиский со стопами
+//       GURU.addOCOOrder(OcoOrderExecutor.createOCOOrder(symbol, ocruglenuyQuantitySuchetomMonety50, takeProfitTwo, stopLoss, doSkolkiGotovyBratUbytok));
+        Order orderProfit = (GURU.orderManager.creatMARKETrderTakeProfit(symbol, ocruglenuyQuantitySuchetomMonety50, takeProfit));
+        orderProfit.setCenaVhoda(takeProfit);
+        GURU.addTakeProfitOrder(orderProfit);
+
+
+        return true;
+
+
+    }
+}
+package com.binance.connector.myyyyyFUTURE.streampotoki;
+
+import com.binance.connector.futures.client.impl.UMWebsocketClientImpl;
+import com.binance.connector.futures.client.utils.WebSocketCallback;
+import com.binance.connector.myyyyyFUTURE.GURU;
+import com.binance.connector.myyyyyFUTURE.processory.Processor;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class AllPairsCandlestickStream {
+
+    private UMWebsocketClientImpl wsClient;
+    private Processor processor;
+
+    public AllPairsCandlestickStream() {
+        wsClient = new UMWebsocketClientImpl();
+        processor = GURU.processor;
+    }
+
+    public void subscribeToAllPairsCandlesticks(List<String> symbols, String interval) {
+        try {
+        ArrayList<String> streams = new ArrayList<>();
+
+        for (String symbol : symbols) {
+            streams.add(symbol.toLowerCase() + "@kline_" + interval);
+        }
+
+        wsClient.combineStreams(streams, new WebSocketCallback() {
+            @Override
+            public void onReceive(String message) {
+                // Здесь вы можете анализировать сообщения о свечах
+//                System.out.println("Данные о свечах: " + message);
+                System.out.println("Данные о свечах: ");
+
+                // Пример обработки JSON-ответа
+                JSONObject jsonEvent = new JSONObject(message);
+                JSONObject data = jsonEvent.getJSONObject("data");
+                JSONObject kline = data.getJSONObject("k");
+                boolean isKlineClosed = kline.getBoolean("x");
+                if (isKlineClosed) {
+                    System.out.println("Свеча закрыта");// Действия в случае, если свеча закрыта
+                    processor.priemJsonZakrytyhSvechey(jsonEvent);
+                }
+            }
+            // Добавление обработчика onFailureCallback
+
+        });
+        } catch (Exception e) {
+            // Обработка исключения
+            System.err.println("Произошла ошибка во время работы вебсокета - предпологаю что обрыв - буду пробовать переподключаться: " + e.getMessage());
+            // Здесь можно добавить дополнительную логику обработки
+        }
+    }
+
+
+    public void closeAllStream(){
+    wsClient.closeAllConnections();
+    }
+}
+
+
+package com.binance.connector.myyyyyFUTURE.streampotoki;
+
+import com.binance.connector.futures.client.impl.UMWebsocketClientImpl;
+import com.binance.connector.futures.client.utils.WebSocketCallback;
+import com.binance.connector.myyyyyFUTURE.processory.Processor;
+
+public class UserDataStream {
+
+    private UMWebsocketClientImpl userWsClient;
+    private  Processor processor;
+
+    public UserDataStream() {
+        userWsClient = new UMWebsocketClientImpl();
+       processor = new Processor(); //todo проерить как лучше синглтон или так
+    }
+
+    public void subscribeToUserDataStream(String listenKey) {
+        userWsClient.listenUserStream(listenKey, new WebSocketCallback() {
+            @Override
+            public void onReceive(String message) {
+                // Обработка уведомлений пользователя
+//                System.out.println("Данные пользователя: " + message);
+                processor.priemDannyhPolzovatelya(message);
+            }
+
+
+        });
+    }
+
+    public void closeAllStream(){
+        userWsClient.closeAllConnections();
+    }
+
+
+}
+
+package com.binance.connector.myyyyyFUTURE.suchnostyotservera.acaunt;
+
+public class AccountBalance {
+    private String asset; // Валюта
+    private double walletBalance; // Общий баланс
+    private double crossWalletBalance; // Доступный для вывода баланс
+    private double balanceChange; // Изменение баланса
+
+    // Геттеры и сеттеры
+
+    public String getAsset() {
+        return asset;
+    }
+
+    public void setAsset(String asset) {
+        this.asset = asset;
+    }
+
+    public double getWalletBalance() {
+        return walletBalance;
+    }
+
+    public void setWalletBalance(double walletBalance) {
+        this.walletBalance = walletBalance;
+    }
+
+    public double getCrossWalletBalance() {
+        return crossWalletBalance;
+    }
+
+    public void setCrossWalletBalance(double crossWalletBalance) {
+        this.crossWalletBalance = crossWalletBalance;
+    }
+
+    public double getBalanceChange() {
+        return balanceChange;
+    }
+
+    public void setBalanceChange(double balanceChange) {
+        this.balanceChange = balanceChange;
+    }
+}
+package com.binance.connector.myyyyyFUTURE.suchnostyotservera.acaunt;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class AccountUpdate {
+    private List<AccountBalance> balances;
+    private List<Position> positions;
+
+    // Геттеры и сеттеры
+
+
+    public AccountUpdate() {
+        balances = new ArrayList<>();
+        positions = new ArrayList<>();
+    }
+
+    public List<AccountBalance> getBalances() {
+        return balances;
+    }
+
+    public void setBalances(List<AccountBalance> balances) {
+        this.balances = balances;
+    }
+
+    public List<Position> getPositions() {
+        return positions;
+    }
+
+    public void setPositions(List<Position> positions) {
+        this.positions = positions;
+    }
+}
+
+package com.binance.connector.myyyyyFUTURE.suchnostyotservera.acaunt;
+
+public class OrderDTONEISPOLZUYU {
+    private String eventType;
+    private long eventTime;
+    private long transactionTime;
+    // Данные ордера
+    private String symbol;
+    private String clientOrderId;
+    private String side;
+    // ... другие поля
+
+
+
+    public OrderDTONEISPOLZUYU() {
+        // Конструктор по умолчанию
+    }
+
+    public OrderDTONEISPOLZUYU(String eventType, long eventTime, long transactionTime, String symbol, String clientOrderId, String side) {
+        this.eventType = eventType;
+        this.eventTime = eventTime;
+        this.transactionTime = transactionTime;
+        this.symbol = symbol;
+        this.clientOrderId = clientOrderId;
+        this.side = side;
+    }
+
+    public String getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
+    }
+
+    public long getEventTime() {
+        return eventTime;
+    }
+
+    public void setEventTime(long eventTime) {
+        this.eventTime = eventTime;
+    }
+
+    public long getTransactionTime() {
+        return transactionTime;
+    }
+
+    public void setTransactionTime(long transactionTime) {
+        this.transactionTime = transactionTime;
+    }
+
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public void setSymbol(String symbol) {
+        this.symbol = symbol;
+    }
+
+    public String getClientOrderId() {
+        return clientOrderId;
+    }
+
+    public void setClientOrderId(String clientOrderId) {
+        this.clientOrderId = clientOrderId;
+    }
+
+    public String getSide() {
+        return side;
+    }
+
+    public void setSide(String side) {
+        this.side = side;
+    }
+}
+
+package com.binance.connector.myyyyyFUTURE.suchnostyotservera.acaunt;
+
+public class Position {
+    private String symbol; // Символ торговой пары
+    private double positionAmount; // Количество в позиции
+    private double entryPrice; // Средняя цена входа
+    private double fundingRate; // Ставка финансирования
+    private double unrealizedProfit; // Нереализованная прибыль/убыток
+    private String marginType; // Тип маржи
+    private double isolatedWallet; // Замороженная сумма на марже
+    private String positionSide; // Тип позиции
+    private String marginAsset; // Валюта маржи
+
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public void setSymbol(String symbol) {
+        this.symbol = symbol;
+    }
+
+    public double getPositionAmount() {
+        return positionAmount;
+    }
+
+    public void setPositionAmount(double positionAmount) {
+        this.positionAmount = positionAmount;
+    }
+
+    public double getEntryPrice() {
+        return entryPrice;
+    }
+
+    public void setEntryPrice(double entryPrice) {
+        this.entryPrice = entryPrice;
+    }
+
+    public double getFundingRate() {
+        return fundingRate;
+    }
+
+    public void setFundingRate(double fundingRate) {
+        this.fundingRate = fundingRate;
+    }
+
+    public double getUnrealizedProfit() {
+        return unrealizedProfit;
+    }
+
+    public void setUnrealizedProfit(double unrealizedProfit) {
+        this.unrealizedProfit = unrealizedProfit;
+    }
+
+    public String getMarginType() {
+        return marginType;
+    }
+
+    public void setMarginType(String marginType) {
+        this.marginType = marginType;
+    }
+
+    public double getIsolatedWallet() {
+        return isolatedWallet;
+    }
+
+    public void setIsolatedWallet(double isolatedWallet) {
+        this.isolatedWallet = isolatedWallet;
+    }
+
+    public String getPositionSide() {
+        return positionSide;
+    }
+
+    public void setPositionSide(String positionSide) {
+        this.positionSide = positionSide;
+    }
+
+    public String getMarginAsset() {
+        return marginAsset;
+    }
+
+    public void setMarginAsset(String marginAsset) {
+        this.marginAsset = marginAsset;
+    }
+// Геттеры и сеттеры
+}
+
+package com.binance.connector.myyyyyFUTURE.sushnosty;
+
+import java.util.Objects;
+
+public class Order {
+    private double cenaVhoda;
+    private String symbol;
+    private long orderId;
+    private double cummulativeQuoteQty;
+    private double executedQty;
+    private String status;
+    private String side;//направление сделки
+    private String type;
+
+    public int kakayaPoshetuSvecha;
+
+    public double colichestvoCuplennuhMonet;
+
+    public boolean verhnyayPolovina; //todo спользуеться только для рантайм оредров
+
+    public Order() {
+    }
+
+    public Order(String symbol, long orderId, double cummulativeQuoteQty, double executedQty, String status, String side, String type) {
+        this.cenaVhoda = cenaVhoda;
+        this.symbol = symbol;
+        this.orderId = orderId;
+        this.cummulativeQuoteQty = cummulativeQuoteQty;
+        this.executedQty = executedQty;
+        this.status = status;
+        this.side = side;
+        this.type = type;
+        this.kakayaPoshetuSvecha = 0;
+        this.verhnyayPolovina = true;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    // Геттеры и сеттеры для каждого поля
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public void setSymbol(String symbol) {
+        this.symbol = symbol;
+    }
+
+    public long getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(long orderId) {
+        this.orderId = orderId;
+    }
+
+    public double getCummulativeQuoteQty() {
+        return cummulativeQuoteQty;
+    }
+
+    public void setCummulativeQuoteQty(double cummulativeQuoteQty) {
+        this.cummulativeQuoteQty = cummulativeQuoteQty;
+    }
+
+    public double getExecutedQty() {
+        return executedQty;
+    }
+
+    public void setExecutedQty(double executedQty) {
+        this.executedQty = executedQty;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getSide() {
+        return side;
+    }
+
+    public void setSide(String side) {
+        this.side = side;
+    }
+
+    public double getCenaVhoda() {
+        return cenaVhoda;
+    }
+
+    public void setCenaVhoda(double cenaVhoda) {
+        this.cenaVhoda = cenaVhoda;
+    }
+
+
+    public double getColichestvoCuplennuhMonet() {
+        return colichestvoCuplennuhMonet;
+    }
+
+    public void setColichestvoCuplennuhMonet(double colichestvoCuplennuhMonet) {
+        this.colichestvoCuplennuhMonet = colichestvoCuplennuhMonet;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Order)) return false;
+        Order that = (Order) o;
+        return getOrderId() == that.getOrderId() && Objects.equals(getSymbol(), that.getSymbol());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getSymbol(), getOrderId());
+    }
+
+
+    @Override
+    public String toString() {
+        return "Order{" +
+                "cenaVhoda=" + cenaVhoda +
+                ", symbol='" + symbol + '\'' +
+                ", orderId=" + orderId +
+                ", cummulativeQuoteQty=" + cummulativeQuoteQty +
+                ", executedQty=" + executedQty +
+                ", status='" + status + '\'' +
+                ", side='" + side + '\'' +
+                ", type='" + type + '\'' +
+                ", kakayaPoshetuSvecha=" + kakayaPoshetuSvecha +
+                ", colichestvoCuplennuhMonet=" + colichestvoCuplennuhMonet +
+                ", verhnyayPolovina=" + verhnyayPolovina +
+                '}';
+    }
+}
+
+//import java.math.BigDecimal;
+//
+//public class Order {
+//    private long orderId;
+//    private String symbol;
+//    private String status;
+//    private String clientOrderId;
+//    private BigDecimal price;
+//    private BigDecimal avgPrice;
+//    private BigDecimal origQty;
+//    private BigDecimal executedQty;
+//    private BigDecimal cumQty;
+//    private BigDecimal cumQuote;
+//    private String timeInForce;
+//    private String type;
+//    private boolean reduceOnly;
+//    private boolean closePosition;
+//    private String side;
+//    private String positionSide;
+//    private BigDecimal stopPrice;
+//    private String workingType;
+//    private boolean priceProtect;
+//    private String origType;
+//    private String priceMatch;
+//    private String selfTradePreventionMode;
+//    private long goodTillDate;
+//    private long updateTime;
+//
+//    // Getters and Setters for each field
+//    // ...
+//}
+
+
+
+package com.binance.connector.myyyyyFUTURE.sushnosty;
+
+public class OrderDTO {
+   public String symbol;            // Символ  ////////////////////////////////////////////////////
+
+   public long orderId ;                // Идентификатор ордера  ///////////////////////////////////////////
+
+   public String side;                // Сторона (покупка/продажа)   /////////////////////////////////
+
+   public double originalQuantity;   // Исходное количество   ///////////////////////////////////////////
+
+   public String orderStatus;        // Статус ордера  ////////////////////////////////////////////////
+
+   public String tip;
+
+
+
+    public OrderDTO(String symbol, String side, double originalQuantity, String orderStatus, long orderId) {
+        this.symbol = symbol;
+        this.side = side;
+        this.originalQuantity = originalQuantity;
+        this.orderStatus = orderStatus;
+        this.orderId = orderId;
+    }
+
+    public String getTip() {
+        return tip;
+    }
+
+    public void setTip(String tip) {
+        this.tip = tip;
+    }
+}
+
+package com.binance.connector.myyyyyFUTURE.sushnosty;
+
+
+import java.awt.*;
+
+public class Svecha {
+
+//    public final String money;
+    public  String money; //todo для теста не файнал
+
+//    private final long openTime;
+    private long openTime; //todo для теста не файнал
+    private final double open;
+    private final double high;
+    private final double low;
+    private final double close;
+
+    private  double sma;
+    private  double UpBolinjer;
+    private  double DownBolinjer;
+
+    public Color color;
+
+    public Color getColor() {
+        return color;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
+    }
+
+    public Svecha(Color color ,String money ,long openTime, double open, double high, double low, double close) {
+        this.openTime = openTime;
+        this.open = open;
+        this.high = high;
+        this.low = low;
+        this.close = close;
+        this.color = color;
+        this.money = money;
+    }
+
+
+    // todo конструкторр для тестовой части
+    public Svecha(String money, long openTime, double open, double high, double low, double close) {
+        this.money = money;
+        this.openTime = openTime;
+        this.open = open;
+        this.high = high;
+        this.low = low;
+        this.close = close;
+    }
+    // todo конструкторр для тестовой части
+    public Svecha(double open, double high, double low, double close) {
+        this.open = open;
+        this.high = high;
+        this.low = low;
+        this.close = close;
+    }
+
+
+    // Геттеры для open, high, low, close
+
+    public long getOpenTime() {
+        return openTime;
+    }
+
+    public double getOpen() {
+        return open;
+    }
+
+    public double getHigh() {
+        return high;
+    }
+
+    public double getLow() {
+        return low;
+    }
+
+    public double getClose() {
+        return close;
+    }
+
+
+    public double getSma() {
+        return sma;
+    }
+
+    public void setSma(double sma) {
+        this.sma = sma;
+    }
+
+    public double getUpBolinjer() {
+        return UpBolinjer;
+    }
+
+    public void setUpBolinjer(double upBolinjer) {
+        UpBolinjer = upBolinjer;
+    }
+
+    public double getDownBolinjer() {
+        return DownBolinjer;
+    }
+
+    public void setDownBolinjer(double downBolinjer) {
+        DownBolinjer = downBolinjer;
+    }
+}
+
+
+//openTime: Это поле хранит временную метку начала периода свечи. Обычно это время выражается в миллисекундах с начала эпохи (1 января 1970 года). Эта информация используется для определения момента времени, когда начался интервал, который представляет свеча.
+//
+//        open: Цена открытия. Это цена актива (например, акции, валюты или товара) в начале временного интервала, который покрывает свеча. Это первая цена, которая была зафиксирована в начале торгового периода.
+//
+//        high: Максимальная цена. Это самая высокая цена, до которой достиг актив в течение временного интервала свечи.
+//
+//        low: Минимальная цена. Это самая низкая цена, до которой актив упал в течение временного интервала свечи.
+//
+//        close: Цена закрытия. Это цена актива в конце временного интервала, который представляет свеча. Это последняя цена, которая была зафиксирована в конце торгового периода.
+package com.binance.connector.myyyyyFUTURE.sushnosty;
+
+public class ValutnayaPara {
+    String symbol;
+    String tickSize;
+    String stepSize;
+    public int cifrPosleZapytoyDlyaLotaVoVTOROYMONETE;
+    public int cifrPriPokupkePoslezapatouCENAvUSDT;
+
+    public ValutnayaPara(String symbol, String tickSize, String stepSize) {
+        if (symbol.equals("ACHUSDT")) {
+            System.out.println();
+        }
+        this.symbol = symbol;
+        this.tickSize = tickSize;
+        this.stepSize = stepSize;
+        this.cifrPosleZapytoyDlyaLotaVoVTOROYMONETE = calculatePrecisionStep();
+        this.cifrPriPokupkePoslezapatouCENAvUSDT = calculatePrecisionTiket();
+    }
+
+    private int calculatePrecisionStep() {
+        // Удаляем нули с конца строки, чтобы получить точное количество значащих цифр
+        stepSize = stepSize.indexOf(".") < 0 ? stepSize : stepSize.replaceAll("0*$", "").replaceAll("\\.$", "");
+        String[] parts = stepSize.split("\\.");
+        return parts.length > 1 ? parts[1].length() : 0;
+    }
+
+    private int calculatePrecisionTiket() {
+        // Удаляем нули с конца строки, чтобы получить точное количество значащих цифр
+        tickSize = tickSize.indexOf(".") < 0 ? tickSize : tickSize.replaceAll("0*$", "").replaceAll("\\.$", "");
+        String[] parts = tickSize.split("\\.");
+        return parts.length > 1 ? parts[1].length() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return "ValutnayaPara{" +
+                "symbol='" + symbol + '\'' +
+                ", tickSize='" + tickSize + '\'' +
+                ", stepSize='" + stepSize + '\'' +
+                ", cifrPosleZapytoyDlyaLota=" + cifrPosleZapytoyDlyaLotaVoVTOROYMONETE +
+                ", cifrPriPokupkePoslezapatou=" + cifrPriPokupkePoslezapatouCENAvUSDT +
+                '}';
+    }
+}
+
+package com.binance.connector.myyyyyFUTURE.ustanovkaorderov;
+
+import com.binance.connector.futures.client.impl.UMFuturesClientImpl;
+import com.binance.connector.myyyyyFUTURE.GURU;
+import com.binance.connector.myyyyyFUTURE.PrivateConfig;
+import com.binance.connector.myyyyyFUTURE.parsery.ParserOrderov;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Order;
+import org.json.JSONObject;
+
+import java.util.LinkedHashMap;
+
+public class OrderManager {
+
+    private static UMFuturesClientImpl client;
+
+    public OrderManager(String apiKey, String secretKey) {
+        client = new UMFuturesClientImpl(apiKey, secretKey);
+    }
+
+    public Order createMarketOrder(String symbol, String side, double quantity,boolean socrashat) { //"origType":"MARKET"//todo квенти был стриннгом - если будут неполадки сомтреть сюда
+    GURU.playSIGNAL();//todo играем музыку!!!!!!!!!!
+
+        double ocruglenuyQuantitySuchetomMonety = GURU.ocruglitel(quantity, GURU.getMapPosleZapytoy().get(symbol).cifrPosleZapytoyDlyaLotaVoVTOROYMONETE);
+
+
+        LinkedHashMap<String, Object> parameters = new LinkedHashMap<>();
+        parameters.put("symbol", symbol);
+        parameters.put("side", side); // "SELL" для шорта, "BUY" для лонга
+        parameters.put("type", "MARKET");
+        parameters.put("quantity", ocruglenuyQuantitySuchetomMonety);
+        parameters.put("reduceOnly", socrashat); // Установите этот параметр, если вы хотите, чтобы ордер выполнялся только как сокращение позиции
+
+
+        // Вызов метода для создания ордера
+        String response = client.account().newOrder(parameters);
+        System.out.println("Market Order Response: " + response);
+
+        Order order = ParserOrderov.parseOrder(response); //цену входа ставим в процессоре  в zahodVShellPoziciyu
+        order.colichestvoCuplennuhMonet = ocruglenuyQuantitySuchetomMonety;
+
+        return order;
+
+    }
+//    Market Order Response: {"orderId":945383596,"symbol":"ACHUSDT","status":"NEW","clientOrderId":"XWE2lEN9zwGvMtrWlBMD1F","price":"0.0000000","avgPrice":"0.00","origQty":"307","executedQty":"0","cumQty":"0","cumQuote":"0.0000000","timeInForce":"GTC","type":"MARKET","reduceOnly":false,"closePosition":false,"side":"SELL","positionSide":"BOTH","stopPrice":"0.0000000","workingType":"CONTRACT_PRICE","priceProtect":false,"origType":"MARKET","priceMatch":"NONE","selfTradePreventionMode":"NONE","goodTillDate":0,"updateTime":1704332660235}
+
+
+    public  void setMARKETStopLossForShort(String symbol, String quantity, String stopPrice) {
+        LinkedHashMap<String, Object> parameters = new LinkedHashMap<>();
+        parameters.put("symbol", symbol);
+        parameters.put("side", "BUY"); // Маркетный Стоп-лосс для шорта - ордер на покупку
+        parameters.put("type", "STOP_MARKET");
+        parameters.put("quantity", quantity);
+        parameters.put("stopPrice", stopPrice);
+
+        String response = client.account().newOrder(parameters);
+        System.out.println("Stop Loss Order Response: " + response);
+    }
+
+    public void setMARKETTakeProfitForShort(String symbol, String quantity, String stopPrice) {
+        LinkedHashMap<String, Object> parameters = new LinkedHashMap<>();
+        parameters.put("symbol", symbol);
+        parameters.put("side", "BUY"); // Тейк-профит для шорта - ордер на покупку
+        parameters.put("type", "TAKE_PROFIT_MARKET");
+        parameters.put("quantity", quantity);
+        parameters.put("stopPrice", stopPrice);
+
+        String response = client.account().newOrder(parameters);
+        System.out.println("Take Profit Order Response: " + response);
+    }
+
+
+
+        // Существующие методы...
+
+        public Order creatMARKETrderTakeProfit(String symbol, double quantity, double price) {//"origType":"LIMIT"  .. название поменять МАркет
+            GURU.playSIGNAL();//todo играем музыку!!!!!!!!!!
+
+
+        double ocruglenuyQuantitySuchetomMonety = GURU.ocruglitel(quantity, GURU.getMapPosleZapytoy().get(symbol).cifrPosleZapytoyDlyaLotaVoVTOROYMONETE);
+
+            LinkedHashMap<String, Object> parameters = new LinkedHashMap<>();
+            parameters.put("symbol", symbol);
+            parameters.put("side", "BUY");
+//            parameters.put("type", "LIMIT");
+            parameters.put("type", "TAKE_PROFIT_MARKET");
+            parameters.put("timeInForce", "GTC"); // Good Till Canceled
+            parameters.put("quantity", ocruglenuyQuantitySuchetomMonety); //todo test quantity ocruglenuyQuantitySuchetomMonety
+//            parameters.put("price", String.valueOf(price));//todo возможно можноактивировать для ограничения цены  - типа до скольки готов тепрпть убыток
+            parameters.put("stopPrice", String.valueOf(price));
+            parameters.put("reduceOnly", true); // Установите этот параметр, если вы хотите, чтобы ордер выполнялся только как сокращение позиции
+
+
+            String response = client.account().newOrder(parameters);
+            System.out.println("Delayed Buy Order Response: " + response);
+            return ParserOrderov.parseOrder(response);
+        }
+ //   Delayed Buy Order Response: {"orderId":948872562,"symbol":"ACHUSDT","status":"NEW","clientOrderId":"Amioe3kKbu1vpq9xFvuoKI","price":"0.0000000","avgPrice":"0.00","origQty":"158","executedQty":"0","cumQty":"0","cumQuote":"0.0000000","timeInForce":"GTC","type":"TAKE_PROFIT_MARKET","reduceOnly":true,"closePosition":false,"side":"BUY","positionSide":"BOTH","stopPrice":"0.0197100","workingType":"CONTRACT_PRICE","priceProtect":false,"origType":"TAKE_PROFIT_MARKET","priceMatch":"NONE","selfTradePreventionMode":"NONE","goodTillDate":0,"updateTime":1704448357952}
+
+
+//0.01950
+
+
+    public Order creatMARKETOrderStopLoss(String symbol, double quantity, double price) {//"origType":"STOP_MARKET"
+        GURU.playSIGNAL();//todo играем музыку!!!!!!!!!!
+
+
+        double ocruglenuyQuantitySuchetomMonety = GURU.ocruglitel(quantity, GURU.getMapPosleZapytoy().get(symbol).cifrPosleZapytoyDlyaLotaVoVTOROYMONETE);
+
+
+        LinkedHashMap<String, Object> parameters = new LinkedHashMap<>();
+        parameters.put("symbol", symbol);
+        parameters.put("side", "BUY");
+        parameters.put("type", "STOP_MARKET");
+        parameters.put("timeInForce", "GTC"); // Good Till Canceled
+        parameters.put("quantity", ocruglenuyQuantitySuchetomMonety); //todo test quantity ocruglenuyQuantitySuchetomMonety
+        parameters.put("stopPrice", String.valueOf(price)); // Цена активации стоп-ордера
+        parameters.put("reduceOnly", true); // Установите этот параметр, если вы хотите, чтобы ордер выполнялся только как сокращение позиции
+
+
+        String response = client.account().newOrder(parameters);
+        System.out.println("Delayed Buy Order Response: " + response);
+        return ParserOrderov.parseOrder(response);
+    }
+  //      Delayed Buy Order Response: {"orderId":945483426,"symbol":"ACHUSDT","status":"NEW","clientOrderId":"yZy0YEixZA5ZnjoDXFkD79","price":"0.0000000","avgPrice":"0.00","origQty":"308","executedQty":"0","cumQty":"0","cumQuote":"0.0000000","timeInForce":"GTC","type":"STOP_MARKET","reduceOnly":false,"closePosition":false,"side":"BUY","positionSide":"BOTH","stopPrice":"0.0200000","workingType":"CONTRACT_PRICE","priceProtect":false,"origType":"STOP_MARKET","priceMatch":"NONE","selfTradePreventionMode":"NONE","goodTillDate":0,"updateTime":1704336377661}
+
+
+    public void cancelOrder(String symbol, long orderId) { //для отложенных лимит и стоп лос "status":"CANCELED",
+        LinkedHashMap<String, Object> parameters = new LinkedHashMap<>();
+        parameters.put("symbol", symbol);
+        parameters.put("orderId", orderId);
+
+        String response = client.account().cancelOrder(parameters);
+        System.out.println("Cancel Order Response: " + response);
+    }
+//    Cancel Order Response: {"orderId":946916635,"symbol":"ACHUSDT","status":"CANCELED","clientOrderId":"VrFjrKhVtPgfcxgoRh5jsF","price":"0.0190000","avgPrice":"0.00","origQty":"309","executedQty":"0","cumQty":"0","cumQuote":"0.0000000","timeInForce":"GTC","type":"LIMIT","reduceOnly":false,"closePosition":false,"side":"BUY","positionSide":"BOTH","stopPrice":"0.0000000","workingType":"CONTRACT_PRICE","priceProtect":false,"origType":"LIMIT","priceMatch":"NONE","selfTradePreventionMode":"NONE","goodTillDate":0,"updateTime":1704382866522}
+
+
+
+//    public static void main(String[] args) {
+    public static void main() {
+        OrderManager orderManager = new OrderManager(PrivateConfig.API_KEY,PrivateConfig.SECRET_KEY);
+//        orderManager.creatLIMITOrderTakeProfit("ACHUSDT",308,0.22000);
+//        orderManager.creatLIMITOrderTakeProfit("ACHUSDT",309,0.01900);
+//        orderManager.cancelOrder("ACHUSDT",946916635);
+
+
+
+//        orderManager.creatMARKETOrderStopLoss("ACHUSDT",120,0.01975);
+//        orderManager.creatMARKETrderTakeProfit("ACHUSDT",158,0.01970);
+        System.out.println("Оправляю нужный ордер ------------------VVVVVVVVVVVVVVVVVVVVVVVVVVVV");
+
+        orderManager.createMarketOrder("ACHUSDT","SELL",307,false);
+
+        System.out.println("После ордера ордера ------------------MMMMMMMMMMMMMMM");
+
+//        orderManager.createMarketOrder("ACHUSDT","BUY",307,true);
+    }
+
+
+
+   public void prodlenyeListenKey(){
+        client.userData().extendListenKey();
+   }
+
+   public String createListenKey() {
+       String response = client.userData().createListenKey();
+       JSONObject json = new JSONObject(response);
+       return json.getString("listenKey");
+   }
+
+}
+
+//            orderManager.createMarketOrder("ACHUSDT","SELL",307);
+//            orderManager.createMarketOrder("ACHUSDT","BUY",307);
+//    Market Order Response: {"orderId":946901926,"symbol":"ACHUSDT","status":"NEW","clientOrderId":"Pj5QexorB7VXMaXcl8Dxzk","price":"0.0000000","avgPrice":"0.00","origQty":"307","executedQty":"0","cumQty":"0","cumQuote":"0.0000000","timeInForce":"GTC","type":"MARKET","reduceOnly":false,"closePosition":false,"side":"SELL","positionSide":"BOTH","stopPrice":"0.0000000","workingType":"CONTRACT_PRICE","priceProtect":false,"origType":"MARKET","priceMatch":"NONE","selfTradePreventionMode":"NONE","goodTillDate":0,"updateTime":1704382431227} //открыл маркет
+//Market Order Response: {"orderId":946906067,"symbol":"ACHUSDT","status":"NEW","clientOrderId":"zozWVmtJTaOUhDUpqSGR8C","price":"0.0000000","avgPrice":"0.00","origQty":"307","executedQty":"0","cumQty":"0","cumQuote":"0.0000000","timeInForce":"GTC","type":"MARKET","reduceOnly":false,"closePosition":false,"side":"BUY","positionSide":"BOTH","stopPrice":"0.0000000","workingType":"CONTRACT_PRICE","priceProtect":false,"origType":"MARKET","priceMatch":"NONE","selfTradePreventionMode":"NONE","goodTillDate":0,"updateTime":1704382497958}//закрыл маркет
+
+//////////////
+
+//        orderManager.creatLIMITOrderTakeProfit("ACHUSDT",309,0.01900);
+//    Delayed Buy Order Response: {"orderId":946916635,"symbol":"ACHUSDT","status":"NEW","clientOrderId":"VrFjrKhVtPgfcxgoRh5jsF","price":"0.0190000","avgPrice":"0.00","origQty":"309","executedQty":"0","cumQty":"0","cumQuote":"0.0000000","timeInForce":"GTC","type":"LIMIT","reduceOnly":false,"closePosition":false,"side":"BUY","positionSide":"BOTH","stopPrice":"0.0000000","workingType":"CONTRACT_PRICE","priceProtect":false,"origType":"LIMIT","priceMatch":"NONE","selfTradePreventionMode":"NONE","goodTillDate":0,"updateTime":1704382775476}
+//////////////////
+//        orderManager.cancelOrder("ACHUSDT",946916635); удалил тейк профит
+//                Cancel Order Response: {"orderId":946916635,"symbol":"ACHUSDT","status":"CANCELED","clientOrderId":"VrFjrKhVtPgfcxgoRh5jsF","price":"0.0190000","avgPrice":"0.00","origQty":"309","executedQty":"0","cumQty":"0","cumQuote":"0.0000000","timeInForce":"GTC","type":"LIMIT","reduceOnly":false,"closePosition":false,"side":"BUY","positionSide":"BOTH","stopPrice":"0.0000000","workingType":"CONTRACT_PRICE","priceProtect":false,"origType":"LIMIT","priceMatch":"NONE","selfTradePreventionMode":"NONE","goodTillDate":0,"updateTime":1704382866522}
+//////////////
+
+
+
+
+
+
+package com.binance.connector.myyyyyFUTURE.util;
+
+import com.binance.connector.futures.client.impl.UMWebsocketClientImpl;
+
+import java.util.ArrayList;
+
+public class CandlestickListener {
+    public static void main(String[] args) {
+        UMWebsocketClientImpl client = new UMWebsocketClientImpl(); // используйте URL продакшн-версии WebSocket
+
+        // Создаем поток для прослушивания свечей на паре BTC/USDT
+        // Параметр "1m" означает 1-минутные свечи. Можно изменить на другой интервал, например "5m" для 5-минутных свечей
+        int streamID = client.klineStream("btcusdt", "1m", (event) -> {
+            System.out.println(event); // вывод информации о свече
+        });
+
+        // Для закрытия потока используйте client.closeConnection(streamID);
+    }
+}
+
+package com.binance.connector.myyyyyFUTURE.util;
+
+import java.io.*;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+
+public class FileAndFolderNames {
+    public static void main(String[] args) {
+        String startFolder = "C:\\Users\\svn13\\Downloads\\binance-futures-connector-java-main\\binance-futures-connector-java-main"; // Укажите путь к начальной папке
+
+        try {
+            StringBuilder contentBuilder = new StringBuilder();
+            Files.walkFileTree(Paths.get(startFolder), new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    String fileName = file.getFileName().toString();
+                    String filePath = file.toString().replace(startFolder, "").replace(File.separator, ".");
+                    contentBuilder.append(filePath).append(".").append(fileName).append("\n");
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    String folderName = dir.getFileName().toString();
+                    String folderPath = dir.toString().replace(startFolder, "").replace(File.separator, ".");
+                    contentBuilder.append(folderPath).append(".").append(folderName).append("\n");
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+
+            String fileAndFolderNames = contentBuilder.toString();
+
+            // Теперь можно записать содержимое в текстовый документ
+            try (PrintWriter writer = new PrintWriter("имена_файлов_и_папок.txt")) {
+                writer.write(fileAndFolderNames);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            System.out.println("Имена файлов и папок записаны в текстовый документ.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+package com.binance.connector.myyyyyFUTURE.util;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+//C:\BINACEFUTURE\binance-futures-connector-java-main\src\main\java\com\binance\connector\myyyyyFUTURE\MYTEST
+
+public class JavaFileReader {
+    public static void main(String[] args) {
+        String startFolder = "C:\\BINACEFUTURE\\binance-futures-connector-java-main\\src\\main\\java\\com\\binance\\connector\\myyyyyFUTURE"; // Укажите путь к начальной папке
+
+        try {
+            StringBuilder contentBuilder = new StringBuilder();
+            Files.walk(Paths.get(startFolder))
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .forEach(filePath -> {
+                        try {
+                            String fileContent = new String(Files.readAllBytes(filePath));
+                            contentBuilder.append(fileContent).append("\n");
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
+
+            String allJavaCode = contentBuilder.toString();
+
+            // Теперь можно записать содержимое в текстовый документ
+            try (PrintWriter writer = new PrintWriter("binance-futures-connector3.txt")) {
+                writer.write(allJavaCode);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            System.out.println("Содержимое Java файлов записано в текстовый документ.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+//package com.binance.connector.myyyyyFUTURE.util;
+//
+//import java.net.URI;
+//import java.net.http.HttpClient;
+//import java.net.http.HttpRequest;
+//import java.net.http.HttpResponse;
+//import java.io.IOException;
+//import java.nio.file.Files;
+//import java.nio.file.Paths;
+//
+//public class BinanceFuturesInfo {
+//    public static void main(String[] args) {
+//        HttpClient client = HttpClient.newHttpClient();
+//        HttpRequest request = HttpRequest.newBuilder()
+//                .uri(URI.create("https://fapi.binance.com/fapi/v1/exchangeInfo"))
+//                .build();
+//
+//        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+//                .thenApply(HttpResponse::body)
+//                .thenAccept(json -> saveToFile(json, "C:\\binance_exchange_info.json"))
+//                .join();
+//    }
+//
+//    private static void saveToFile(String content, String path) {
+//        try {
+//            Files.writeString(Paths.get(path), content);
+//        } catch (IOException e) {
+//            System.err.println("Ошибка при записи файла: " + e.getMessage());
+//        }
+//    }
+//}
+// работает нно на 11 версии
+package com.binance.connector.myyyyyFUTURE.util.parsmoneyznak;
+
+import java.io.*;
+import java.nio.file.*;
+import java.util.regex.*;
+
+public class PairsExtractor {
+
+    public static void main(String[] args) {
+        String inputFile = "C:\\parsedPairsInfoMONEYFUTURE.txt"; // Укажите путь к вашему файлу
+        String outputFile = "C:\\USDT пары FULL.txt"; // Укажите путь к файлу вывода
+
+        try {
+            String content = new String(Files.readAllBytes(Paths.get(inputFile)));
+            Matcher m = Pattern.compile("Symbol: (\\w+)").matcher(content);
+            BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
+
+            while (m.find()) {
+                writer.write(m.group(1) + System.lineSeparator());
+            }
+
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+package com.binance.connector.myyyyyFUTURE.util.parsmoneyznak;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
+public class UtilClassDlyaTXTPosleZapytoy {
+
+    public static void main(String[] args) {
+        try {
+            String content = new String(Files.readAllBytes(Paths.get("C:\\infoMoneyFuture.json")));
+            JSONObject jsonObject = new JSONObject(content);
+            JSONArray symbols = jsonObject.getJSONArray("symbols");
+            List<String> tradingPairsInfo = parseTradingPairs(symbols);
+            Files.write(Paths.get("C:\\parsedPairsInfoMONEYFUTURE.txt"), tradingPairsInfo);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static List<String> parseTradingPairs(JSONArray symbols) {
+        List<String> tradingPairsInfo = new ArrayList<>();
+        for (int i = 0; i < symbols.length(); i++) {
+            JSONObject symbol = symbols.getJSONObject(i);
+            String symbolName = symbol.getString("symbol");
+            if (symbolName.endsWith("USDT")) {
+                StringBuilder info = new StringBuilder();
+                info.append("Symbol: ").append(symbolName).append("\n");
+
+                JSONArray filters = symbol.getJSONArray("filters");
+                for (int j = 0; j < filters.length(); j++) {
+                    JSONObject filter = filters.getJSONObject(j);
+                    String filterType = filter.getString("filterType");
+                    if ("PRICE_FILTER".equals(filterType)) {
+                        info.append("Price Filter: \n");
+                        info.append("  Tick Size: ").append(filter.getString("tickSize")).append("\n");
+                    }
+                    if ("LOT_SIZE".equals(filterType)) {
+                        info.append("Lot Size: \n");
+                        info.append("  Step Size: ").append(filter.getString("stepSize")).append("\n");
+                    }
+                }
+                info.append("\n");
+                tradingPairsInfo.add(info.toString());
+            }
+        }
+        return tradingPairsInfo;
+    }
+}
+//    Для ACHUSDT:
+//
+//        Tick Size: 0.00001000 — это минимальное изменение цены, которое может быть для этой пары. Но для вашего примера это не столь важно.
+//        Step Size: 1.00000000 — это означает, что вы можете торговать этой монетой только целыми числами (например, 1, 2, 3 и так далее), дробные количества не допускаются.
+//        Для JOEUSDT:
+//
+//        Tick Size: 0.00010000 — это минимальное изменение цены для этой пары.
+//        Step Size: 0.01000000 — это означает, что минимальное количество, которое вы можете купить или продать, составляет 0.01. Вы можете торговать этой монетой в количествах, кратных 0.01 (например, 0.01, 0.02, 0.03 и так далее, вплоть до двух знаков после запятой).
+
+

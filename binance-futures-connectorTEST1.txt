@@ -1,0 +1,482 @@
+package com.binance.connector.myyyyyFUTURE.MYTEST.parsery;
+
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
+public class SvechaParser {
+    public static List<Svecha> main() {
+        String pathToFile = "C:\\ИсторическиеДАнныеБИНАНС\\2\\ACHUSDT.txt";
+        List<Svecha> svechi = new ArrayList<>();
+
+        try {
+            List<String> lines = Files.readAllLines(Paths.get(pathToFile));
+            for (String line : lines) {
+                String[] parts = line.split(",");
+                long openTime = Long.parseLong(parts[0]);
+                double open = Double.parseDouble(parts[1]);
+                double high = Double.parseDouble(parts[2]);
+                double low = Double.parseDouble(parts[3]);
+                double close = Double.parseDouble(parts[4]);
+
+                Svecha svecha = new Svecha("ACHUSDT", openTime, open, high, low, close);
+                svechi.add(svecha);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Размер листа " + svechi.size());
+
+        return svechi;
+        // После парсинга, в списке svechi будут все свечи в порядке файла
+        // Здесь вы можете выполнить с этим списком что-либо
+    }
+}
+package com.binance.connector.myyyyyFUTURE.MYTEST;
+
+import com.binance.connector.myyyyyFUTURE.MYTEST.parsery.SvechaParser;
+import com.binance.connector.myyyyyFUTURE.MYTEST.visualizator.visualizator.VidoditelVOkno;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+
+import java.util.List;
+
+public class StartTest {
+
+//            "2023-01-01", // начальная дата в формате "год-месяц-день"
+//            "2023-12-31"  // конечная дата в формате "год-месяц-день"
+
+    public static void main(String[] args) {
+
+      List<Svecha> listVsehSvecheyOdnoyMonety = SvechaParser.main();
+
+      List<Svecha> listVsehSvecheyNugnoyDaty = SvechaVidovatelPoDate.filterSvechi(listVsehSvecheyOdnoyMonety,"2023-12-24","2023-12-25");
+
+        VidoditelVOkno vidoditelVOkno = new VidoditelVOkno();
+
+        vidoditelVOkno.runApplication(listVsehSvecheyNugnoyDaty);
+
+
+
+
+
+    }
+}
+
+package com.binance.connector.myyyyyFUTURE.MYTEST;
+
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+
+public class SvechaVidovatelPoDate {
+
+    public static List<Svecha> filterSvechi(List<Svecha> svechi, String startDateStr, String endDateStr) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        long startMillis = LocalDate.parse(startDateStr, formatter).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        // Добавляем 1 день к конечной дате и вычитаем 1 миллисекунду, чтобы получить конец дня
+        long endMillis = LocalDate.parse(endDateStr, formatter).plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1;
+
+        List<Svecha> filteredSvechi = new ArrayList<>();
+        for (Svecha svecha : svechi) {
+            if (svecha.getOpenTime() >= startMillis && svecha.getOpenTime() <= endMillis) {
+                filteredSvechi.add(svecha);
+            }
+        }
+        return filteredSvechi;
+    }
+}
+
+package com.binance.connector.myyyyyFUTURE.MYTEST.tolkodlyanachala;
+
+import java.io.*;
+import java.nio.file.*;
+import java.util.*;
+
+public class CsvAggregator {
+    public static void main(String[] args) throws IOException {
+        String directoryPath = "C:\\ИсторическиеДАнныеБИНАНС\\1"; // Замените на ваш путь к файлам
+        File dir = new File(directoryPath);
+        File[] files = dir.listFiles((d, name) -> name.endsWith(".csv"));
+
+        // Фильтрация и сортировка файлов по дате в названии
+        Arrays.sort(files, Comparator.comparing(File::getName));
+
+        HashMap<String, List<File>> filesByPair = new HashMap<>();
+
+        // Группировка файлов по валютным парам
+        for (File file : files) {
+            String pair = file.getName().split("-")[0];
+            filesByPair.computeIfAbsent(pair, k -> new ArrayList<>()).add(file);
+        }
+
+        // Объединение файлов для каждой пары в правильном порядке
+        for (String pair : filesByPair.keySet()) {
+            List<File> pairFiles = filesByPair.get(pair);
+            BufferedWriter writer = Files.newBufferedWriter(Paths.get(directoryPath, pair + ".txt"));
+
+            for (File pairFile : pairFiles) {
+                List<String> lines = Files.readAllLines(pairFile.toPath());
+                lines.remove(0); // Предполагая, что первая строка - заголовок
+                for (String line : lines) {
+                    writer.write(line);
+                    writer.newLine();
+                }
+            }
+
+            writer.close();
+        }
+    }
+}
+
+package com.binance.connector.myyyyyFUTURE.MYTEST.visualizator.visualizator;
+
+
+
+
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+
+import java.awt.*;
+
+public class AnalizerPatternOne {
+
+  private   double tailToBodyRatio = 2.0;
+
+  private   double procentSmaLine = 10.0;
+
+
+// todo добавить проверку на доджик - сильно малекре тело свечи
+    public void analizer (Svecha candlestick, double sma){
+
+ double differenceBody = candlestick.getColor() == Color.GREEN ? candlestick.getClose() - candlestick.getOpen() : candlestick.getOpen() - candlestick.getClose(); // числовое значение тела свечи (модуль без знака)
+ double differenceTail = candlestick.getColor() == Color.GREEN ?  candlestick.getHigh() - candlestick.getClose() : candlestick.getHigh() - candlestick.getOpen();  // числовое значение верхнего хвоста  свечи (модуль без знака)
+
+      if( differenceTail/differenceBody > tailToBodyRatio && sma > procentSmaLine){
+          System.out.println("Ставим ");
+      }
+      else{
+          System.out.println("Не ставим "); //Todo убрать потом
+      }
+
+    }
+
+
+
+
+}
+
+package com.binance.connector.myyyyyFUTURE.MYTEST.visualizator.visualizator;
+
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+import org.json.JSONArray;
+//import org.json.JSONException;
+//
+//import java.io.BufferedReader;
+//import java.io.FileReader;
+//import java.io.IOException;
+//import java.util.ArrayList;
+//import java.util.List;
+//
+//public class CandlestickDataParser {
+//
+//    public static List<Svecha> readCandlesticksFromFile(String fileName) {
+//        List<Svecha> candlesticks = new ArrayList<>();
+//
+//        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+//            String line = reader.readLine();
+//            JSONArray jsonArray = new JSONArray(line);
+//
+//            for (int i = 0; i < jsonArray.length(); i++) {
+//                JSONArray candlestickData = jsonArray.getJSONArray(i);
+////                long openTime = candlestickData.getLong(0);
+//                double open = candlestickData.getDouble(1);
+//                double high = candlestickData.getDouble(2);
+//                double low = candlestickData.getDouble(3);
+//                double close = candlestickData.getDouble(4);
+//                // Пропускаем остальные данные, так как они нам не нужны для отображения
+//
+//                Svecha candlestick = new Svecha( open, high, low, close);
+//                candlesticks.add(candlestick);  //todo  в ориге ложит еще два параметра
+//            }
+//        } catch (IOException | JSONException e) {
+//            e.printStackTrace();
+//        }
+//
+//        return candlesticks;
+//    }
+//}
+package com.binance.connector.myyyyyFUTURE.MYTEST.visualizator.visualizator;
+
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
+
+public class CandlestickPropocianatorRisvalshik extends JPanel {
+
+    AnalizerPatternOne analizerPatternOne;
+
+    private final List<Svecha> candlesticks;
+    private final List<Double[]> bollingerBands; // Данные линий Боллинджера
+    private final List<Double> smaValues; // Данные SMA
+    private double minPrice = Double.MAX_VALUE;
+    private double maxPrice = Double.MIN_VALUE;
+
+
+    private double scale = 1.0;
+    private final int minCandleWidth = 1;
+    private final int maxCandleWidth = 20;
+
+    public CandlestickPropocianatorRisvalshik(List<Svecha> candlesticks, List<Double[]> bollingerBands, List<Double> smaValues) {
+        AnalizerPatternOne analizerPatternOne1 = new AnalizerPatternOne();
+        this.analizerPatternOne = analizerPatternOne1;
+        this.candlesticks = candlesticks;
+        this.bollingerBands = bollingerBands;
+        this.smaValues = smaValues;
+        calculatePriceRange();
+        setPreferredSize(new Dimension(800, 600));
+
+        addMouseWheelListener(e -> {
+            if (e.getWheelRotation() < 0) {
+                scale = Math.min(scale + 0.1, maxCandleWidth / (double) minCandleWidth);
+            } else {
+                scale = Math.max(scale - 0.1, 1.0);
+            }
+            updatePreferredSize(); // Обновляем размер компонента
+            repaint(); // Перерисовываем компонент
+
+        });
+
+    }
+
+    private void calculatePriceRange() {
+        for (Svecha candle : candlesticks) {
+            minPrice = Math.min(minPrice, candle.getLow());
+            maxPrice = Math.max(maxPrice, candle.getHigh());
+        }
+    }
+
+    private int calculatePercentageChange(double previousClose, double currentClose) {
+        if (previousClose == 0) {
+            return 0; // Избегаем деления на ноль
+        }
+        return (int) ((currentClose - previousClose) / previousClose * 100);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+
+        int width = getWidth();
+        int height = getHeight();
+//        int candleWidth = Math.max(width / candlesticks.size() - 1, 1);
+        int candleWidth = Math.max((int) (minCandleWidth * scale), minCandleWidth);
+        // Отрисовка свечей
+        for (int i = 0; i < candlesticks.size(); i++) {
+            Svecha candle = candlesticks.get(i);
+
+            int x = i * (candleWidth + 1);
+            int yHigh = (int) ((maxPrice - candle.getHigh()) / (maxPrice - minPrice) * height);
+            int yLow = (int) ((maxPrice - candle.getLow()) / (maxPrice - minPrice) * height);
+            int yOpen = (int) ((maxPrice - candle.getOpen()) / (maxPrice - minPrice) * height);
+            int yClose = (int) ((maxPrice - candle.getClose()) / (maxPrice - minPrice) * height);
+
+            Color color = candle.getClose() > candle.getOpen() ? Color.GREEN : Color.RED;
+            candle.setColor(color);
+            g2d.setColor(color);
+
+            g2d.fillRect(x, Math.min(yOpen, yClose), candleWidth, Math.abs(yClose - yOpen));
+            g2d.drawLine(x + candleWidth / 2, yHigh, x + candleWidth / 2, yLow);
+        }
+
+//        // Отрисовка полос Боллинджера
+//        g2d.setColor(Color.BLUE);
+//        for (int i = 0; i < candlesticks.size(); i++) {
+//            Double[] bands = bollingerBands.get(i);
+//            if (bands != null && bands[0] != null && bands[1] != null) {
+//                int x = i * (candleWidth + 1);
+//                int yUpperBand = (int) ((maxPrice - bands[0]) / (maxPrice - minPrice) * height);
+//                int yLowerBand = (int) ((maxPrice - bands[1]) / (maxPrice - minPrice) * height);
+//
+//                g2d.drawLine(x, yUpperBand, x + candleWidth, yUpperBand);
+//                g2d.drawLine(x, yLowerBand, x + candleWidth, yLowerBand);
+//            }
+//        }
+        // Отрисовка полос Боллинджера
+        g2d.setColor(Color.BLUE);
+        for (int i = 1; i < candlesticks.size(); i++) {
+            Double[] previousBands = bollingerBands.get(i - 1);
+            Double[] currentBands = bollingerBands.get(i);
+
+            if (previousBands != null && currentBands != null && previousBands[0] != null && currentBands[0] != null) {
+                int x1 = (i - 1) * (candleWidth + 1);
+                int y1Upper = (int) ((maxPrice - previousBands[0]) / (maxPrice - minPrice) * height);
+                int y1Lower = (int) ((maxPrice - previousBands[1]) / (maxPrice - minPrice) * height);
+
+                int x2 = i * (candleWidth + 1);
+                int y2Upper = (int) ((maxPrice - currentBands[0]) / (maxPrice - minPrice) * height);
+                int y2Lower = (int) ((maxPrice - currentBands[1]) / (maxPrice - minPrice) * height);
+
+                // Рисуем непрерывные линии для верхней и нижней полос Боллинджера
+                g2d.drawLine(x1, y1Upper, x2, y2Upper);
+                g2d.drawLine(x1, y1Lower, x2, y2Lower);
+            }
+        }
+
+        // Отрисовка линии SMA
+        g2d.setColor(Color.BLACK);
+        for (int i = 1; i < candlesticks.size(); i++) {
+            if (smaValues.get(i) != null && smaValues.get(i - 1) != null) {
+                int x1 = (i - 1) * (candleWidth + 1);
+                int y1 = (int) ((maxPrice - smaValues.get(i - 1)) / (maxPrice - minPrice) * height);
+                int x2 = i * (candleWidth + 1);
+                int y2 = (int) ((maxPrice - smaValues.get(i)) / (maxPrice - minPrice) * height);
+                g2d.drawLine(x1, y1, x2, y2);
+            }
+        }
+
+
+        // Отрисовка процентных изменений
+        for (int i = 1; i < candlesticks.size(); i++) {
+            Svecha currentCandle = candlesticks.get(i);
+            int percentageChange = calculatePercentageChange(candlesticks.get(i - 1).getClose(), currentCandle.getClose());
+            int x = i * (candleWidth + 1);
+            int y = (int) ((maxPrice - currentCandle.getClose()) / (maxPrice - minPrice) * getHeight());
+
+            // Выбираем контрастный цвет для процентов, исходя из цвета свечи
+            Color textColor = currentCandle.getClose() > currentCandle.getOpen() ? Color.GREEN : Color.BLUE;
+            g2d.setColor(textColor);
+
+            // Создаем текст с процентами
+            String percentageText = percentageChange + "%";
+            int textWidth = g2d.getFontMetrics().stringWidth(percentageText);
+            int textHeight = g2d.getFontMetrics().getHeight();
+
+            // Располагаем текст так, чтобы он не перекрывал тело свечи
+            int yOffset = currentCandle.getClose() > currentCandle.getOpen() ? -textHeight - 2 : textHeight + 2;
+            g2d.drawString(percentageText, x, y + yOffset);
+
+
+            // Расчет и отображение дополнительного процентного изменения относительно средней линии Боллинджера
+//            if (Math.abs(percentageChange) > 10 && smaValues.size() > i) {
+            if (i == smaValues.size()-2) { // работаем с предпоследней свечей(последняя сформировавщиеся)
+
+
+                testConsole(smaValues.size()-1); //вывод в консоль - последней сформировавщейся свечи, и последней несвормировавщейся
+
+
+                Double smaValue = smaValues.get(i-1); // Значение SMA для текущей(предпоследней- посленей сформировавщейся) свечи
+
+                if (smaValue != null) {
+                    double bollingerPercentageChange = calculatePercentageChange(smaValue, currentCandle.getClose());
+
+                    // Выбираем оранжевый цвет для текста
+                    g2d.setColor(Color.ORANGE);
+
+                    // Располагаем дополнительный текст на смещение в другую сторону
+                    int extraOffset = currentCandle.getClose() > currentCandle.getOpen() ? yOffset - 15 : yOffset + 15;
+                    g2d.drawString(String.format("%.1f%%", bollingerPercentageChange), x, y + extraOffset);
+
+                    analizerPatternOne.analizer(currentCandle,smaValue);
+
+                }
+            }
+        }
+    }
+
+    private void updatePreferredSize() {
+        int width = (int) (candlesticks.size() * (minCandleWidth * scale + 1));
+        int height = getHeight();
+        setPreferredSize(new Dimension(width, height));
+        revalidate(); // Важно: уведомить контейнер о изменении размера компонента
+    }
+
+
+    // Вывод информации о текущей свече в консоль на русском языке
+    public void testConsole(int i ){
+        // Вывод информации о текущей свече в консоль на русском языке
+        Svecha currentCandle = candlesticks.get(i);
+        System.out.println("Свеча " + i + ": Открытие=" + currentCandle.getOpen() + ", Максимум=" + currentCandle.getHigh() +
+                ", Минимум=" + currentCandle.getLow() + ", Закрытие=" + currentCandle.getClose() +
+                ", Цвет=" + (currentCandle.getClose() > currentCandle.getOpen() ? "Зеленый" : "Красный")); // todo последняя свеча отображение не коректно - так как еще не зафиксированно
+
+        Svecha currentCandlePrev = candlesticks.get(i-1); // предыдущая свеча
+        System.out.println("Свеча " + (i-1) + ": Открытие=" + currentCandlePrev.getOpen() + ", Максимум=" + currentCandlePrev.getHigh() +
+                ", Минимум=" + currentCandlePrev.getLow() + ", Закрытие=" + currentCandlePrev.getClose() +
+                ", Цвет=" + (currentCandlePrev.getClose() > currentCandlePrev.getOpen() ? "Зеленый" : "Красный"));
+    }
+
+
+
+
+}
+
+
+
+package com.binance.connector.myyyyyFUTURE.MYTEST.visualizator.visualizator;
+
+import com.binance.connector.myyyyyFUTURE.bolinjer.BollingerBandsCalculator;
+import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
+
+
+import javax.swing.*;
+import java.util.List;
+
+public class VidoditelVOkno {
+
+//    public static void main(String[] args) {
+//        String coin = "APTUSDT.txt";
+//
+//        Main app = new Main();
+//        app.runApplication(coin);
+//    }
+
+//    private void runApplication(String coin) {
+    public void runApplication(List<Svecha> candlesticks) {
+        // Считываем данные свечей из файла
+//        List<Svecha> candlesticks = CandlestickDataParser.readCandlesticksFromFile(coin);
+//
+//        // Проверяем успешность загрузки данных
+//        if (candlesticks == null || candlesticks.isEmpty()) {
+//            System.out.println("Не удалось загрузить данные свечей.");
+//            return;
+//        }
+
+        // Вычисляем Bollinger Bands и SMA
+        int period = 21; // Используем рекомендуемый период Bollinger Bands
+        List<Double[]> bollingerBands = BollingerBandsCalculator.calculateBollingerBands(candlesticks, period);
+        List<Double> smaValues = BollingerBandsCalculator.calculateSMA(candlesticks, period);
+
+        // Создаем и настраиваем окно приложения
+        JFrame frame = createApplicationFrame(candlesticks, bollingerBands, smaValues);
+        frame.setVisible(true);
+    }
+
+    private JFrame createApplicationFrame(List<Svecha> candlesticks, List<Double[]> bollingerBands, List<Double> smaValues) {
+        JFrame frame = new JFrame("Candlestick Chart with Bollinger Bands and SMA");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+//        CandlestickPropocianatorRisvalshik chart = new CandlestickPropocianatorRisvalshik(candlesticks);
+        CandlestickPropocianatorRisvalshik chart = new CandlestickPropocianatorRisvalshik(candlesticks, bollingerBands, smaValues);
+
+        // Создаем JScrollPane и добавляем в него CandlestickChart
+        JScrollPane scrollPane = new JScrollPane(chart);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        frame.add(scrollPane); // Добавляем JScrollPane в JFrame
+
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        return frame;
+    }
+}
+

@@ -5,6 +5,9 @@ import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
 
 
 import javax.swing.*;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class VidoditelVOkno {
@@ -12,7 +15,7 @@ public class VidoditelVOkno {
    public CandlestickPropocianatorRisvalshik chart;
 
 //    private void runApplication(String coin) {
-    public void vivodVOkno(List<Svecha> candlesticks) {
+    public void vivodVOkno(List<Svecha> candlesticks,long openTime) {
         // Считываем данные свечей из файла
 //        List<Svecha> candlesticks = CandlestickDataParser.readCandlesticksFromFile(coin);
 //
@@ -28,15 +31,17 @@ public class VidoditelVOkno {
         List<Double> smaValues = BollingerBandsCalculator.calculateSMA(candlesticks, period);
 
         // Создаем и настраиваем окно приложения
-        JFrame frame = createApplicationFrame(candlesticks, bollingerBands, smaValues);
+//        JFrame frame = createApplicationFrame(candlesticks, bollingerBands, smaValues);
+        JFrame frame = createApplicationFrame(candlesticks, bollingerBands, smaValues, openTime);
+
         frame.setVisible(true);
     }
 
-    private JFrame createApplicationFrame(List<Svecha> candlesticks, List<Double[]> bollingerBands, List<Double> smaValues) {
-        JFrame frame = new JFrame("Candlestick Chart with Bollinger Bands and SMA");
+    private JFrame createApplicationFrame(List<Svecha> candlesticks, List<Double[]> bollingerBands, List<Double> smaValues,long openTime) {
+        JFrame frame = new JFrame("Candlestick Chart: " + convertTimestampToDate(openTime));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        chart = new CandlestickPropocianatorRisvalshik(candlesticks, bollingerBands, smaValues);
+        chart = new CandlestickPropocianatorRisvalshik(candlesticks, bollingerBands, smaValues,openTime);
 
         // Создаем JScrollPane и добавляем в него CandlestickChart
         JScrollPane scrollPane = new JScrollPane(chart);
@@ -47,5 +52,15 @@ public class VidoditelVOkno {
         frame.pack();
         frame.setLocationRelativeTo(null);
         return frame;
+    }
+
+
+    private String convertTimestampToDate(long timestamp) {
+        // Конвертация timestamp в дату для заголовка
+        // Используйте тот же метод, что и раньше, или аналогичный
+        return Instant.ofEpochMilli(timestamp)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime()
+                .format(DateTimeFormatter.ofPattern("dd MMMM yyyy HH:mm:ss"));
     }
 }

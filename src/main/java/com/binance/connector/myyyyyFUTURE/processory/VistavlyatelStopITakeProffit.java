@@ -2,6 +2,7 @@ package com.binance.connector.myyyyyFUTURE.processory;
 
 
 import com.binance.connector.myyyyyFUTURE.GURU;
+import com.binance.connector.myyyyyFUTURE.MYTEST.GURUTEST;
 import com.binance.connector.myyyyyFUTURE.PrivateConfig;
 import com.binance.connector.myyyyyFUTURE.sushnosty.Order;
 import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
@@ -27,11 +28,14 @@ public class VistavlyatelStopITakeProffit {
 
         Order orderStop = (GURU.orderManager.creatMARKETOrderStopLoss(symbol, orderRunTime.getCummulativeQuoteQty(), stopLoss));
         orderStop.setCenaVhoda(stopLoss);
-        GURU.addStopLossOrder(orderStop); //todo переделать потом в менеджере на человечиский со стопами
+//        GURU.addStopLossOrder(orderStop); //todo переделать потом в менеджере на человечиский со стопами
 //       GURU.addOCOOrder(OcoOrderExecutor.createOCOOrder(symbol, ocruglenuyQuantitySuchetomMonety50, takeProfitTwo, stopLoss, doSkolkiGotovyBratUbytok));
         Order orderProfit = (GURU.orderManager.creatMARKETrderTakeProfit(symbol, ocruglenuyQuantitySuchetomMonety50, takeProfit));
         orderProfit.setCenaVhoda(takeProfit);
-        GURU.addTakeProfitOrder(orderProfit);
+//        GURU.addTakeProfitOrder(orderProfit);
+
+        GURUTEST.orderaNaServer.add(orderStop);
+        GURUTEST.orderaNaServer.add(orderProfit);
 
 
         return true;
