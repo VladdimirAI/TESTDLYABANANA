@@ -6,7 +6,8 @@ import java.util.*;
 
 public class CsvAggregator {
     public static void main(String[] args) throws IOException {
-        String directoryPath = "C:\\ИсторическиеДАнныеБИНАНС\\1"; // Замените на ваш путь к файлам
+//        String directoryPath = "C:\\ИсторическиеДАнныеБИНАНС\\1"; // Замените на ваш путь к файлам
+        String directoryPath = "C:\\Исторические данные в виде много файлов"; // Замените на ваш путь к файлам
         File dir = new File(directoryPath);
         File[] files = dir.listFiles((d, name) -> name.endsWith(".csv"));
 

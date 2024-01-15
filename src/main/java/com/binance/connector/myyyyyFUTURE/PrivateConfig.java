@@ -28,11 +28,11 @@ public final class PrivateConfig {
 
     public static final int BOLIDJERPERIOD = 22;
     public static final int NACHALNUYBALANS = 100;
-    public static final int NA_ODIN_ORDER_V_USDT = 6;
+    public static final int NA_ODIN_ORDER_V_USDT = 10;
 
 
-    public static final double STOPLOSSVPROCENTAH = 0.35; //todo 0.35 = 35%
-    public static final double STOPLIMIDOSKOLKIUBYTOK = 0.37;
+    public static final double STOPLOSSVPROCENTAH = 1.1; //todo 0.35 = 35%
+    public static final double STOPLIMIDOSKOLKIUBYTOK = 1.12;
 
 
 
@@ -40,7 +40,7 @@ public final class PrivateConfig {
 
 
     public static final int USLOVIEVIHODACOLSVECHEYINAMESTE = 4;
-    public static final int USLOVIYAVIHODAPROCENTSCITAEMUYNAMESTE = 3;
+    public static final double USLOVIYAVIHODAPROCENTSCITAEMUYNAMESTE = 0.03;
 
     public static final int USLOVIYAVIHODAPODRYDZELENYH = 3;
 
@@ -48,11 +48,13 @@ public final class PrivateConfig {
     public static final int TPMINIMUMCHOBEGONETROGAT = 2;
 
 
-    public static final int PRIEMLEMUYPROCENTDOBOLINJERA = 10;
-    public static final double OTSKOLKIRAZHVOSTDOLGHENBITBOLSHETRENDA = 0.8;
-    public static final double DOSKOLKIRAZHVOSTDOLGHENBITBOLSHETRENDA = 2.5;
+    public static final int PRIEMLEMUYPROCENTDOBOLINJERA = 15;
+    public static final double OTSKOLKIRAZHVOSTDOLGHENBITBOLSHETRENDA = 0.30;
+    public static final double DOSKOLKIRAZHVOSTDOLGHENBITBOLSHETRENDA = 4.0;
 
     public static final double PERESTANOVKATPPROCENTDOBAVKIKSMA = 2.0;
+
+    public static final int USTANOVKASLPRISRABOTKETPNASKOLCOPROCENTOVVISHE = 2;
 
 
 

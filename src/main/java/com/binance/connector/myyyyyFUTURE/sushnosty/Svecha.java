@@ -114,6 +114,7 @@ public class Svecha {
         return "Svecha{" +
                 "money='" + money + '\'' +
                 ", openTime= " + convertTimestampToDate(openTime) +
+                ", openTime2= " + openTime +
                 ", open=" + open +
                 ", high=" + high +
                 ", low=" + low +

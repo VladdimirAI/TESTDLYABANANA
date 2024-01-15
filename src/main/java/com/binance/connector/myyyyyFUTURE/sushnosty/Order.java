@@ -18,6 +18,7 @@ public class Order {
 
     public boolean verhnyayPolovina; //todo спользуеться только для рантайм оредров
 
+
     public Order() {
     }
 

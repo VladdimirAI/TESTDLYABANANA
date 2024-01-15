@@ -10,6 +10,7 @@ import java.util.List;
 
 public class SvechaParser {
     public static List<Svecha> parsimZaGod(String symbol) {
+//        String pathToFile = "C:\\ИсторическиеДАнныеБИНАНС\\2\\" + symbol + ".txt";
         String pathToFile = "C:\\ИсторическиеДАнныеБИНАНС\\2\\" + symbol + ".txt";
 
         List<Svecha> svechi = new ArrayList<>();

@@ -74,7 +74,7 @@ public class OrderManager {
         // Существующие методы...
 
         public Order creatMARKETrderTakeProfit(String symbol, double quantity, double price) {//"origType":"LIMIT"  .. название поменять МАркет
-            GURU.playSIGNAL();//todo играем музыку!!!!!!!!!!
+//            GURU.playSIGNAL();//todo играем музыку!!!!!!!!!!
 
 
         double ocruglenuyQuantitySuchetomMonety = GURU.ocruglitel(quantity, GURU.getMapPosleZapytoy().get(symbol).cifrPosleZapytoyDlyaLotaVoVTOROYMONETE);
@@ -105,7 +105,7 @@ public class OrderManager {
 
 
     public Order creatMARKETOrderStopLoss(String symbol, double quantity, double price) {//"origType":"STOP_MARKET"
-        GURU.playSIGNAL();//todo играем музыку!!!!!!!!!!
+//        GURU.playSIGNAL();//todo играем музыку!!!!!!!!!!
 
 
         double ocruglenuyQuantitySuchetomMonety = GURU.ocruglitel(quantity, GURU.getMapPosleZapytoy().get(symbol).cifrPosleZapytoyDlyaLotaVoVTOROYMONETE);

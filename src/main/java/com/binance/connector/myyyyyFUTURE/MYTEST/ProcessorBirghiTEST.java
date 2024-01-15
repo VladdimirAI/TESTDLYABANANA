@@ -1,6 +1,7 @@
 package com.binance.connector.myyyyyFUTURE.MYTEST;
 
 import com.binance.connector.myyyyyFUTURE.GURU;
+import com.binance.connector.myyyyyFUTURE.PrivateConfig;
 import com.binance.connector.myyyyyFUTURE.processory.Processor;
 import com.binance.connector.myyyyyFUTURE.sushnosty.Order;
 import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
@@ -19,16 +20,22 @@ public class ProcessorBirghiTEST {
 
     public boolean ochered;
 
+    public Svecha predpologhitelnoParonormalnayaSvecha;
+    public double bilBalansHodNazad = 100;
+
 
     public ProcessorBirghiTEST(String symbol) { //todo больше не создавать!!!!!!!!!
         this.symbol = symbol;
     }
 
     public void nachaloTesta(List<Svecha> listVsehSvecheyZaGodOdnoyMonety) {
-        System.out.println("nachaloTesta thread id: " + Thread.currentThread().getId());
 
 
         for (Svecha nextSvecha : listVsehSvecheyZaGodOdnoyMonety) {
+            System.out.println( GURUTEST.runTimeOrdersRClientom.size() +" " + GURUTEST.takeProfitOrdersRClientom.size() + " " + GURUTEST.stopLossOrdersRClientom.size());
+            System.out.println(GURUTEST.realBalaceClienta);
+
+//            otlovParonormalnoySvechi(nextSvecha);
 
             proverkaSrabotkiOrderovNaSvechu(nextSvecha);
 
@@ -36,6 +43,17 @@ public class ProcessorBirghiTEST {
 
 
 
+//
+//                if(nextSvecha.getOpenTime() == 1679253300000L) {
+//                    System.out.println( GURUTEST.runTimeOrdersRClientom.size() +" " + GURUTEST.takeProfitOrdersRClientom.size() + " " + GURUTEST.stopLossOrdersRClientom.size());
+//                    System.out.println(GURUTEST.realBalaceClienta);
+//
+//                }
+//            if(nextSvecha.getOpenTime() == 1677024900000L) {
+//                System.out.println( GURUTEST.runTimeOrdersRClientom.size() +" " + GURUTEST.takeProfitOrdersRClientom.size() + " " + GURUTEST.stopLossOrdersRClientom.size());
+//                System.out.println(GURUTEST.realBalaceClienta);
+//
+//            }
 
 
                 otpravkaClientuSvechi(nextSvecha); //только когда выполняеться метод приемка ордеров хоть и спустым икончаетьсятолько потом продолжнаеться кдтут тоесть вызываетьс новя итерация
@@ -56,6 +74,11 @@ public class ProcessorBirghiTEST {
 
 
     public void proverkaSrabotkiOrderovNaSvechu(Svecha svechaDlyaOtpravkiClientu) { //stLoss TAkeProfi
+
+//        if(svechaDlyaOtpravkiClientu.getOpenTime() == 1683937800000L){
+//            System.out.println(GURUTEST.realBalaceClienta);
+//        }
+
 
         Random rand = new Random();
         boolean firstConditionFirst = rand.nextBoolean();
@@ -81,18 +104,28 @@ public class ProcessorBirghiTEST {
     private void checkStopLossOrders(Svecha svecha) {
         double verhCenySvechi = svecha.getHigh();
         double nizhCenySvichi = svecha.getLow();
+//        if(symbol.equals("1000PEPEUSDT")){
+//            System.out.println();
+//        }
 
         if (GURUTEST.stopLossOrdersRClientom.containsKey(symbol)) {
             Order order = GURUTEST.stopLossOrdersRClientom.get(symbol);
             double cenorderaSL = order.getCenaVhoda();
             double qentySL = order.getColichestvoCuplennuhMonet();
 
-            if (verhCenySvechi >= cenorderaSL && nizhCenySvichi <= cenorderaSL) {
+            if (verhCenySvechi >= cenorderaSL) {
+//            if (verhCenySvechi >= cenorderaSL && nizhCenySvichi <= cenorderaSL) {
+
                 // Тут код для обработки stop loss orders
                 // ...
+                if(GURU.sybloyRazreshenyPovrtoryZahoda.contains(symbol)) { // для повторного захода
+                    GURUTEST.dogonOrder.put(symbol, GURUTEST.stopLossOrdersRClientom.get(symbol));
+                    GURU.sybloyRazreshenyPovrtoryZahoda.remove(symbol);  // для повторного захода
+                }
                 GURUTEST.stopLossOrdersRClientom.remove(symbol);
 
                 Order runTimeOrder = GURUTEST.runTimeOrdersRClientom.get(symbol);
+
                 GURUTEST.runTimeOrdersRClientom.remove(symbol);
 
 
@@ -104,8 +137,12 @@ public class ProcessorBirghiTEST {
 
                 GURUTEST.realBalaceClienta += scolkoZatratiliNaPokupkuVRunTime + raznycaObshayaBezTela;
 
-                if (GURUTEST.takeProfitOrdersRClientom.containsKey(symbol)) { //todo потму что верх и  низ бывает СЛ
+                if (GURUTEST.takeProfitOrdersRClientom.containsKey(symbol)) { //todo потму что если верх то тп надо удалить
                     GURUTEST.takeProfitOrdersRClientom.remove(symbol);
+
+
+
+
                 }
             }
 
@@ -119,14 +156,19 @@ public class ProcessorBirghiTEST {
         double verhCenySvechi = svecha.getHigh();
         double nizhCenySvichi = svecha.getLow();
 
+//        if(symbol.equals("1000PEPEUSDT")){
+//           System.out.println();
+//      }
+
         if (GURUTEST.takeProfitOrdersRClientom.containsKey(symbol)) {
             Order orderTP = GURUTEST.takeProfitOrdersRClientom.get(symbol);
             double cenorderaTP = orderTP.getCenaVhoda();
             double qentyTP = orderTP.getColichestvoCuplennuhMonet();
 
-            if (verhCenySvechi >= cenorderaTP && nizhCenySvichi <= cenorderaTP) {
+            if (nizhCenySvichi <= cenorderaTP ) {
                 // Тут код для обработки take profit orders
                 // ...
+                System.out.println("PTMetod balas "+GURUTEST.realBalaceClienta);
 
                 GURUTEST.stopLossOrdersRClientom.remove(symbol);
 
@@ -136,16 +178,24 @@ public class ProcessorBirghiTEST {
 //                orderRuTime.setCenaVhoda(orderTP.getCenaVhoda());// произвел изменения в ратайме ненадо!!!!!!!!!
 
 
-                double scolkoNadoNaPokupkuMonet = cenorderaTP * orderRuTime.colichestvoCuplennuhMonet / 2;
+                double scolkoNadoNaPokupkuMonet = cenorderaTP * orderRuTime.colichestvoCuplennuhMonet;
 
-                double scolkoZatratiliNaPokupkuVRunTime = orderRuTime.getCenaVhoda() * orderRuTime.colichestvoCuplennuhMonet / 2; //todo првавельнее было бы qentySL из раннтайма взять
+                double scolkoZatratiliNaPokupkuVRunTime = orderRuTime.getCenaVhoda() * orderRuTime.colichestvoCuplennuhMonet; //todo првавельнее было бы qentySL из раннтайма взять
 
-                double raznycaObshayaBezTela = scolkoZatratiliNaPokupkuVRunTime - scolkoNadoNaPokupkuMonet;
+                double raznycaObshayaBezTela = scolkoZatratiliNaPokupkuVRunTime  - scolkoNadoNaPokupkuMonet ;
 
                 GURUTEST.realBalaceClienta += scolkoZatratiliNaPokupkuVRunTime + raznycaObshayaBezTela;
 
 
-                GURUTEST.takeProfitOrdersRClientom.remove(symbol);
+                GURUTEST.takeProfitOrdersRClientom.remove(symbol); //TODO В ПРОЦЕССОРЕ ПРОД. СДЕЛАТЬ ПРИ ТАКОМ РАСКЛАДЕ ПОСТАНОВКУ СТОП ЛОССА в ЭТО МЕСТО +1% ВВЕРХ  уж есть в     public void procesPriInfoObOrdere(OrderDTO orderDTO) { перепроверить
+
+
+                Order  slOrder = new Order(symbol,GURUTEST.generateOrderID(),0,0, "NEW","BUY","STOP_MARKET");
+                slOrder.setCenaVhoda(cenorderaTP + cenorderaTP/100 * PrivateConfig.USTANOVKASLPRISRABOTKETPNASKOLCOPROCENTOVVISHE);
+                slOrder.setColichestvoCuplennuhMonet(orderRuTime.colichestvoCuplennuhMonet);
+
+                GURUTEST.stopLossOrdersRClientom.put(symbol,slOrder);  //TODO В ПРОЦЕССОРЕ ПРОД. СДЕЛАТЬ ПРИ ТАКОМ РАСКЛАДЕ ПОСТАНОВКУ СТОП ЛОССА в ЭТО МЕСТО +1% ВВЕРХ  уж есть в     public void procesPriInfoObOrdere(OrderDTO orderDTO) { перепроверить
+//                GURU.orderManager.creatMARKETOrderStopLoss(symbol,orderRuTime.colichestvoCuplennuhMonet,)
 
 
             }
@@ -164,17 +214,26 @@ public class ProcessorBirghiTEST {
     }
 
     public void priemkaObrabotkaOrderov(List<Order> orderListotClienta) { //сюдаже и рантайм приходит
-        System.out.println("priemkaObrabotkaOrderov thread id: " + Thread.currentThread().getId());
 
         if (orderListotClienta.isEmpty()){
             System.out.println("Готов приемка ордеров было пусто");
             return;
+        }else{
+            Order  rrrrr = GURUTEST.runTimeOrdersRClientom.get(symbol);
+            System.out.println(tecushayaSvecha);
+           for(Order oredr : orderListotClienta){
+               System.out.println(oredr);
+           }
         }
 
 
         for (Order zaprosOrder : orderListotClienta) {
             String zaprosOrderNapravlenye = zaprosOrder.getSide();
             String zaporOrderType = zaprosOrder.getType();
+
+//            if(zaprosOrder.getSymbol().equals("1000PEPEUSDT")){
+//                System.out.println();
+//            }
 
             if (zaprosOrderNapravlenye.equals("SELL")) {
 
@@ -211,13 +270,17 @@ public class ProcessorBirghiTEST {
 
                         double zatratilPriVhodeVrun = vhodilRaneevRunCena * vhodilRaneevRunMonetSHTUK;
 
-                        double tecuhayaCena = tecushayaSvecha.getOpen();
+                        double tecuhayaCena = tecushayaSvecha.getClose();
 
                         double raznicaSeychas = zatratilPriVhodeVrun - tecuhayaCena * vhodilRaneevRunMonetSHTUK;
 
                         GURUTEST.realBalaceClienta += zatratilPriVhodeVrun + raznicaSeychas;
 
                         GURUTEST.runTimeOrdersRClientom.remove(symbol);
+
+                        if( GURUTEST.stopLossOrdersRClientom.containsKey(symbol)){ GURUTEST.stopLossOrdersRClientom.remove(symbol);}
+
+                        if(GURUTEST.takeProfitOrdersRClientom.containsKey(symbol)){GURUTEST.takeProfitOrdersRClientom.remove(symbol);} //todo проверить может они на стороне клтиента удаля.ться
 
                         break;
 
@@ -259,4 +322,24 @@ public class ProcessorBirghiTEST {
         System.out.println("Готов приемка ордеров");
 
     }
+
+
+
+    public void otlovParonormalnoySvechi(Svecha svecha){
+
+        double raznicaVprocentah = (((GURUTEST.realBalaceClienta - bilBalansHodNazad) / bilBalansHodNazad) * 100);
+
+        if(raznicaVprocentah > 2){ //todo тут 2 как 20 - помнить что закрываються иногда и половинки ордера
+
+
+            System.out.println("Свеча которая подняла баланс  аж на " +raznicaVprocentah + " процентов(прибаить 0) "+ predpologhitelnoParonormalnayaSvecha.toString());
+
+        }
+
+
+
+        bilBalansHodNazad = GURUTEST.realBalaceClienta;
+        predpologhitelnoParonormalnayaSvecha = svecha;
+    }
+
 }

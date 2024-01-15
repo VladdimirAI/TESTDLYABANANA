@@ -1,5 +1,6 @@
 package com.binance.connector.myyyyyFUTURE.MYTEST;
 
+
 import com.binance.connector.myyyyyFUTURE.GURU;
 import com.binance.connector.myyyyyFUTURE.MYTEST.parsery.SvechaParser;
 import com.binance.connector.myyyyyFUTURE.MYTEST.syshnostytest.TestSvechaDDTO;
@@ -21,60 +22,38 @@ import java.awt.*;
 import java.util.List;
 
 
-public class StartTest {
+public class PrognatOdnuMonety {
 
     static double balance = 0;
 
-    static int i = 1;
 
     static VidoditelVOkno vidoditelVOkno;
 
 
     static List<String> teParyChtoZakonchilisRuntimom = new ArrayList<>();
-//            "2023-01-01", // начальная дата в формате "год-месяц-день"
-//            "2023-12-31"  // конечная дата в формате "год-месяц-день"
+
+
+    static String symbol = "CYBERUSDT";
 
     public static void main(String[] args) {
 
-//        String symbol = "ZILUSDT";
 
         vidoditelVOkno = new VidoditelVOkno();
 
-        // Список символов для обработки
-//        List<String> symbols = Arrays.asList("ZILUSDT", "ZRXUSDT", "ZENUSDT"); // Пример списка
-
-        List<String> vseNazvyanyyaVListe = ParserNazvanyi.parsNazvanya();
 
 
         List<Double> vseBalacy = new ArrayList<>();
 
-        for (String symbolchek : vseNazvyanyyaVListe) {
-            processSymbol(symbolchek);
 
-//        processSymbol("1000PEPEUSDT");
-//        processSymbol("DODOXUSDT");
-//        processSymbol("STMXUSDT");
-//        processSymbol("FLMUSDT");//много снимков
-//            processSymbol("RENUSDT");
-//            processSymbol("AMBUSDT"); // хорош для провери повторного захода не забыть пару окн выходит -сли этому препядсвует !!
-//            processSymbol("YGGUSDT"); // + 50% прпорции хвоста - OTSKOLKIRAZHVOSTDOLGHENBITBOLSHETRENDA = 0.30;
+        processSymbol(symbol);
 
-
-//            System.out.println(symbolchek);
 
         if (GURUTEST.runTimeOrdersRClientom.isEmpty()) { //todo если свечей далее нет для закрытия
             balance += GURUTEST.realBalaceClienta - 100;
         }
-        else {
-            teParyChtoZakonchilisRuntimom.add(symbolchek);
-        }
+
 
         vseBalacy.add(balance);
-
-            if(balance > 0.5 && balance < 1.0){
-                System.out.println(symbolchek);
-            }
-        }
 
 
 //        System.out.println("Баланс от изначального 100 долларо спустя годовой прогон по всем парам = " + balance);
@@ -82,7 +61,7 @@ public class StartTest {
             System.out.println(bal);
         }
         System.out.println("cvcvcvcvcvcvcv");
-        for(String paraRunTimeOrder : teParyChtoZakonchilisRuntimom ){
+        for (String paraRunTimeOrder : teParyChtoZakonchilisRuntimom) {
             System.out.println(paraRunTimeOrder);
         }
 
@@ -114,14 +93,14 @@ public class StartTest {
         }
 
 //
-//        for (Svecha svecha : listVsehSvecheyNugnoyDaty)
-//            AnalizerPatternOne.analizer10(svecha);
+        for (Svecha svecha : listVsehSvecheyNugnoyDaty)
+            AnalizerPatternOne.analizer10(svecha);
 
-List<Svecha> listProtivPOvtoryusheshySvechiSybola = new ArrayList<>();
+        List<Svecha> listProtivPOvtoryusheshySvechiSybola = new ArrayList<>();
         for (Svecha svecha : GURUTEST.testovyiList) {
-           if(listProtivPOvtoryusheshySvechiSybola.contains(svecha)){
-               continue;  // исправляет - когда нужные свечи в одном симке - он гонит оди и тот же график два раза
-           }
+            if (listProtivPOvtoryusheshySvechiSybola.contains(svecha)) {
+                continue;  // исправляет - когда нужные свечи в одном симке - он гонит оди и тот же график два раза
+            }
 
             LocalDate date = convertTimestampToLocalDate(svecha.getOpenTime());
             LocalDate dayBefore = date.minusDays(1);
@@ -132,10 +111,11 @@ List<Svecha> listProtivPOvtoryusheshySvechiSybola = new ArrayList<>();
                     date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
 
             ); //представить что скобки нету
-            for(Svecha sv: filteredCandles){listProtivPOvtoryusheshySvechiSybola.add(sv);}
+            for (Svecha sv : filteredCandles) {
+                listProtivPOvtoryusheshySvechiSybola.add(sv);
+            }
 
-//            if(symbol.equals("AMBUSDT")) {
-//                vidoditelVOkno.vivodVOkno(filteredCandles, svecha.getOpenTime(), symbol);
+            vidoditelVOkno.vivodVOkno(filteredCandles, svecha.getOpenTime(), symbol);
 
 //
 //                try {
@@ -143,75 +123,31 @@ List<Svecha> listProtivPOvtoryusheshySvechiSybola = new ArrayList<>();
 //                } catch (InterruptedException e) {
 //                    throw new RuntimeException(e);
 //                }
-//            }
+
 
             System.out.println("SymbolDlyaTEsta " + symbol);
-
-
-
 
 
             ZAPUSKREALNOGOTESTA(filteredCandles, symbol);//todo тесть только кусочки где свечи по 10+ процентов
 
 
-//            ZAPUSKREALNOGOTESTA(listVsehSvecheyOdnoyMonety, symbol); //todo прогонка всех данных
-
-
-
-
             /////TODO ниже логика для случая когда много снимков одной монеты заходит
-            if(!GURUTEST.runTimeOrdersRClientom.isEmpty()){
-               Order ostavShysyaOrder =  GURUTEST.runTimeOrdersRClientom.get(symbol);
+            if (!GURUTEST.runTimeOrdersRClientom.isEmpty()) {
+                Order ostavShysyaOrder = GURUTEST.runTimeOrdersRClientom.get(symbol);
 
-              GURUTEST.realBalaceClienta += ostavShysyaOrder.getCenaVhoda() * ostavShysyaOrder.colichestvoCuplennuhMonet; // возвращаем не исполнившийся ордер или часть неисплнеившуюся
+                GURUTEST.realBalaceClienta += ostavShysyaOrder.getCenaVhoda() * ostavShysyaOrder.colichestvoCuplennuhMonet; // возвращаем не исполнившийся ордер или часть неисплнеившуюся
 
                 teParyChtoZakonchilisRuntimom.add(symbol + "на случай много карточек");
             }
 
-                   GURUTEST.runTimeOrdersRClientom = new HashMap<>();
-                   GURUTEST.takeProfitOrdersRClientom = new HashMap<>();
-                   GURUTEST.stopLossOrdersRClientom = new HashMap<>();
+            GURUTEST.runTimeOrdersRClientom = new HashMap<>();
+            GURUTEST.takeProfitOrdersRClientom = new HashMap<>();
+            GURUTEST.stopLossOrdersRClientom = new HashMap<>();
 
 
-
-            }
+        }
 
     }
-
-
-//        vidoditelVOkno.vivodVOkno(listVsehSvecheyNugnoyDaty);
-
-//        for (Svecha svecha : GURUTEST.testovyiList) {
-//            vivestyVOdelnoeOcnoSveshuDOiPose(listVsehSvecheyOdnoyMonety,svecha ); //подумь как ускорить например выбрать другую дату
-//        }
-
-//        ZAPUSKREALNOGOTESTA(listVsehSvecheyNugnoyDaty, symbol);
-
-
-/////////////////////////////////////////////
-//        vidoditelVOkno.vivodVOkno(listVsehSvecheyNugnoyDaty);
-////////////////////////////////////////////////////
-
-
-    //добавляем одну свечу в рантаймРежиме
-
-
-//      Svecha posled =  listVsehSvecheyNugnoyDaty.get(listVsehSvecheyNugnoyDaty.size()-1);
-//      Svecha predPosl =  listVsehSvecheyNugnoyDaty.get(listVsehSvecheyNugnoyDaty.size()-2);
-//      Svecha predpred =  listVsehSvecheyNugnoyDaty.get(listVsehSvecheyNugnoyDaty.size()-3);
-//
-//      try {
-//        Thread.sleep(10000);
-//        vidoditelVOkno.chart.dobavlenyeSvechiRunTime(predpred);
-//        Thread.sleep(2000);
-//
-//        vidoditelVOkno.chart.dobavlenyeSvechiRunTime(predPosl);
-//        Thread.sleep(2000);
-//
-//        vidoditelVOkno.chart.dobavlenyeSvechiRunTime(posled);
-//      } catch (InterruptedException e) {
-//        throw new RuntimeException(e);
-//      }
 
 
     public static void prostavitSvechamSma(List<Svecha> listVsehSvecheyNugnoyDaty) {
@@ -261,17 +197,7 @@ List<Svecha> listProtivPOvtoryusheshySvechiSybola = new ArrayList<>();
     }
 
 
-//    public static   void vivestyVOdelnoeOcnoSveshuDOiPose(List<Svecha> allCandles, Svecha targetSvecha) {
-//        int targetIndex = allCandles.indexOf(targetSvecha);
-//        if (targetIndex == -1) return; // Если свеча не найдена
-//
-//        int startIndex = Math.max(targetIndex - 50, 0);
-//        int endIndex = Math.min(targetIndex + 50, allCandles.size() - 1);
-//
-//        List<Svecha> surroundingCandles = allCandles.subList(startIndex, endIndex + 1);
-//
-//        vidoditelVOkno.vivodVOkno(surroundingCandles);
-//    }
+
 
 
     private static LocalDate convertTimestampToLocalDate(long timestamp) {

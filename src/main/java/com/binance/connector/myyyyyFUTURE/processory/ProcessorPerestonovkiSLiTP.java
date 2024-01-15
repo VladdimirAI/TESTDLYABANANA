@@ -11,11 +11,15 @@ public class ProcessorPerestonovkiSLiTP {
 
     public static void perestanovkaTkeProfita(String symbol, Svecha svecha) {//todo на второй половине подтягивать стоп лосс ?
 
-        Order orderNaUdalenye = GURU.getTakeProfitOrders().get(symbol);
+
+
+
+//        Order orderNaUdalenye = GURU.getTakeProfitOrders().get(symbol);
+        Order orderNaUdalenye = GURUTEST.takeProfitOrdersRClientom.get(symbol);
 
         GURU.orderManager.cancelOrder(symbol, orderNaUdalenye.getOrderId());
 
-        Order newTPOrder = GURU.orderManager.creatMARKETrderTakeProfit(symbol, orderNaUdalenye.getCummulativeQuoteQty(), svecha.getSma()); //getCummulativeQuoteQty все верно ?
+        Order newTPOrder = GURU.orderManager.creatMARKETrderTakeProfit(symbol, orderNaUdalenye.colichestvoCuplennuhMonet, svecha.getSma()); //getCummulativeQuoteQty все верно ?
         newTPOrder.setCenaVhoda(svecha.getSma());
 
 //        GURU.getTakeProfitOrders().put(symbol, newTPOrder);

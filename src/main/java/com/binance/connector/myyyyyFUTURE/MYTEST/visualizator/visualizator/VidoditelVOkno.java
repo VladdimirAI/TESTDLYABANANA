@@ -15,7 +15,7 @@ public class VidoditelVOkno {
    public CandlestickPropocianatorRisvalshik chart;
 
 //    private void runApplication(String coin) {
-    public void vivodVOkno(List<Svecha> candlesticks,long openTime) {
+    public void vivodVOkno(List<Svecha> candlesticks,long openTime,String symbol) {
         // Считываем данные свечей из файла
 //        List<Svecha> candlesticks = CandlestickDataParser.readCandlesticksFromFile(coin);
 //
@@ -32,13 +32,13 @@ public class VidoditelVOkno {
 
         // Создаем и настраиваем окно приложения
 //        JFrame frame = createApplicationFrame(candlesticks, bollingerBands, smaValues);
-        JFrame frame = createApplicationFrame(candlesticks, bollingerBands, smaValues, openTime);
+        JFrame frame = createApplicationFrame(candlesticks, bollingerBands, smaValues, openTime,symbol);
 
         frame.setVisible(true);
     }
 
-    private JFrame createApplicationFrame(List<Svecha> candlesticks, List<Double[]> bollingerBands, List<Double> smaValues,long openTime) {
-        JFrame frame = new JFrame("Candlestick Chart: " + convertTimestampToDate(openTime));
+    private JFrame createApplicationFrame(List<Svecha> candlesticks, List<Double[]> bollingerBands, List<Double> smaValues,long openTime,String symbol) {
+        JFrame frame = new JFrame(symbol+ " Candlestick Chart: " + convertTimestampToDate(openTime) + "////" + openTime);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         chart = new CandlestickPropocianatorRisvalshik(candlesticks, bollingerBands, smaValues,openTime);

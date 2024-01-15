@@ -20,7 +20,7 @@ public class GURUTEST {
 
     static double buyBalaceClienta;
     static double shellBalaceClienta;
-    static double realBalaceClienta;
+    public static double realBalaceClienta;
 
     public static ProcessorBirghiTEST processorBirghiTEST;
 
@@ -31,12 +31,15 @@ public class GURUTEST {
     public  static List<Svecha> testovyiList ;
     public  static List<TestSvechaDDTO> testovyiListDubley ;
 
+    public static Map<String, Order> dogonOrder;
+
 
     public GURUTEST(String symbol) {
 
         runTimeOrdersRClientom = new HashMap<>();
         stopLossOrdersRClientom = new HashMap<>();
         takeProfitOrdersRClientom = new HashMap<>();
+        dogonOrder = new HashMap<>();
 
         mapPosleZapytoy = Parser.parsInfoPosleZapytoy(PrivateConfig.INFOOCYFRAHPOSLEZAPYTOY);
 

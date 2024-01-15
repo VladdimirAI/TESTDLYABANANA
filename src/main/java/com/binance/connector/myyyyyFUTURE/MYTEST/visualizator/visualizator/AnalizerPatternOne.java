@@ -6,6 +6,7 @@ package com.binance.connector.myyyyyFUTURE.MYTEST.visualizator.visualizator;
 import com.binance.connector.myyyyyFUTURE.GURU;
 import com.binance.connector.myyyyyFUTURE.MYTEST.GURUTEST;
 import com.binance.connector.myyyyyFUTURE.MYTEST.syshnostytest.TestSvechaDDTO;
+import com.binance.connector.myyyyyFUTURE.PrivateConfig;
 import com.binance.connector.myyyyyFUTURE.sushnosty.Svecha;
 
 import java.awt.*;
@@ -15,9 +16,9 @@ import java.time.format.DateTimeFormatter;
 
 public class AnalizerPatternOne {
 
-  private static   double voskolkoRazHvostBolsheTrenda = 0.5;
+  private static   double voskolkoRazHvostBolsheTrenda = PrivateConfig.OTSKOLKIRAZHVOSTDOLGHENBITBOLSHETRENDA ;
 
-  private  static    double priemlemoDoSma = 5.0;
+  private  static    double priemlemoDoSma = (double) PrivateConfig.PRIEMLEMUYPROCENTDOBOLINJERA;
 
 
 // todo добавить проверку на доджик - сильно малекре тело свечи
@@ -44,18 +45,18 @@ public class AnalizerPatternOne {
 
        double hvostBolsheVRaz = raznicaHvostaVCene / raznicaVceneTrend; // 1.5
 
-        System.out.println("-----------");
+//        System.out.println("-----------");
 
         if(raznicaVprocentah >= priemlemoDoSma) {
-            System.out.println("111111111111111");
+//            System.out.println("111111111111111");
         }
         if( hvostBolsheVRaz >= voskolkoRazHvostBolsheTrenda) {
-            System.out.println("222222222222222");
+//            System.out.println("222222222222222");
         }
 
         if(raznicaVprocentah >= priemlemoDoSma && hvostBolsheVRaz >= voskolkoRazHvostBolsheTrenda){
-            System.out.println("СУПЕР - НАША СВЕЧА ==========================================================================================================");
-            System.out.println("Она открылась в ----------  "+ svecha.getOpenTime());
+//            System.out.println("СУПЕР - НАША СВЕЧА ==========================================================================================================");
+//            System.out.println("Она открылась в ----------  "+ svecha.getOpenTime());
 //            GURU.playSIGNAL();
             GURUTEST.testovyiList.add(svecha);
             GURUTEST.testovyiListDubley.add(new TestSvechaDDTO(cenaVerhaTela,cenzVerhaHvosta,raznicaVceneTrend,raznicaVprocentah,raznicaHvostaVCene,hvostBolsheVRaz));
@@ -73,8 +74,8 @@ public class AnalizerPatternOne {
 
         // Проверка, увеличилась ли цена на 10% или более
         if (Math.abs(changePercentage) >= 10) {
-            System.out.println("Цена изменилась на 10% или более относительно цены открытия.");
-            System.out.println(convertTimestampToDate(svecha.getOpenTime()));
+//            System.out.println("Цена изменилась на 10% или более относительно цены открытия.");
+//            System.out.println(convertTimestampToDate(svecha.getOpenTime()));
             // Дополнительная логика, если нужно
         }
     }

@@ -13,6 +13,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Parser {
+
+  static   int i = 0;
+  static   int y = 0;
     public static Order parseLinkedHashMapToOrder(LinkedHashMap<String, Object> map) {
         Order order = new Order();
         order.setOrderId((Long) map.getOrDefault("orderId", 0L));
@@ -57,17 +60,22 @@ public class Parser {
             String content = new String(Files.readAllBytes(Paths.get(filePath)));
             String[] pairs = content.split("\\r?\\n\\r?\\n\\r?\\n"); // Разделить на пары по двум пустым строкам
 
-            Pattern pattern = Pattern.compile("Symbol: (\\S+).*?Tick Size: (\\d+\\.\\d+).*?Step Size: (\\d+\\.\\d+)", Pattern.DOTALL);
+//            Pattern pattern = Pattern.compile("Symbol: (\\S+).*?Tick Size: (\\d+\\.\\d+).*?Step Size: (\\d+\\.\\d+)", Pattern.DOTALL);
+              Pattern pattern = Pattern.compile("Symbol: (\\S+).*?Tick Size: (\\d+(?:\\.\\d+)?).*?Step Size: (\\d+(?:\\.\\d+)?)", Pattern.DOTALL);
+
+
 
             for (String pair : pairs) {
 
                 Matcher matcher = pattern.matcher(pair);
                 if (matcher.find()) {
+
                     String symbol = matcher.group(1);
-                    String tickSize = matcher.group(2);
-                    String stepSize = matcher.group(3);
-                    ValutnayaPara valutnayaPara = new ValutnayaPara(symbol, tickSize, stepSize);
-                    resultMap.put(symbol, valutnayaPara);
+
+                        String tickSize = matcher.group(2);
+                        String stepSize = matcher.group(3);
+                        ValutnayaPara valutnayaPara = new ValutnayaPara(symbol, tickSize, stepSize);
+                        resultMap.put(symbol, valutnayaPara);
 
                 }
             }

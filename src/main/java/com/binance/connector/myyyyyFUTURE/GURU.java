@@ -35,6 +35,10 @@ public class GURU {
     static double realBalace;
 
 
+    static Map<String, Order> dagonOrder;
+
+    public   static List<String> sybloyRazreshenyPovrtoryZahoda;
+
     static ExecutorService executor; //todo возможно убрать
 
     public static Processor processor;
@@ -45,6 +49,7 @@ public class GURU {
         runTimeOrders = new HashMap<>();
         stopLossOrders = new HashMap<>();
         takeProfitOrders = new HashMap<>();
+        dagonOrder = new HashMap<>();
 
         poslednyeSvechiisConsoli = new HashSet<>();
         historySvechey = new HashMap<>();
@@ -63,6 +68,13 @@ public class GURU {
         processor = new Processor();
         orderManager = new OrderManager(PrivateConfig.API_KEY,PrivateConfig.SECRET_KEY);
         accountUpdate = new AccountUpdate();
+
+
+        sybloyRazreshenyPovrtoryZahoda = new ArrayList<>();
+//        for(String moneta: MONEY){
+//            sybloyRazreshenyPovrtoryZahoda.add(moneta); изначально не даем ставить на все подряд даже с мленьким хвостом
+//        }
+
     }
 
     public static synchronized void setBuyBalance(double buyBalance) {

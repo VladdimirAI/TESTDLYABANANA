@@ -3,7 +3,6 @@ package com.binance.connector.myyyyyFUTURE.processory;
 
 import com.binance.connector.myyyyyFUTURE.GURU;
 import com.binance.connector.myyyyyFUTURE.MYTEST.GURUTEST;
-import com.binance.connector.myyyyyFUTURE.MYTEST.ProcessorBirghiTEST;
 import com.binance.connector.myyyyyFUTURE.PrivateConfig;
 import com.binance.connector.myyyyyFUTURE.bolinjer.BollingerBandsCalculator;
 import com.binance.connector.myyyyyFUTURE.parsery.ParserUserSoceta;
@@ -15,6 +14,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,7 +38,7 @@ public class Processor {
             boolean neTopchimsyaNaMeste = ProcessorUsloviiVihoda.neTopchimsyaNamesteVerhnayPolovina(symbol, tekushuyList, PrivateConfig.USLOVIEVIHODACOLSVECHEYINAMESTE, PrivateConfig.USLOVIYAVIHODAPROCENTSCITAEMUYNAMESTE);
             boolean neNeskolkoPodryadZelenuh = ProcessorUsloviiVihoda.neskolkoPodryadZelenuh(tekushuyList, symbol, PrivateConfig.USLOVIYAVIHODAPODRYDZELENYH); //
             if (neMolot && neTopchimsyaNaMeste && neNeskolkoPodryadZelenuh) { // todo перерорверить условия
-                double procentDoTP = ProcessorUsloviiVihoda.procentDoTP(svecha, symbol);
+                double procentDoTP = ProcessorUsloviiVihoda.procentDoTPotSMA(svecha, symbol);
                 if (procentDoTP > PrivateConfig.TPMINIMUMCHOBEGONETROGAT) { //если больше в процентах - не близко к ТП то подтягиваем ТП
                     ProcessorPerestonovkiSLiTP.perestanovkaTkeProfita(symbol, svecha);
                 }
@@ -51,6 +51,7 @@ public class Processor {
 
 
         if (AnalizeProcessor.verhnuyiHvostChtonado(svecha)) { // todo везде проверить финасы - что убавлються - потом проверить что прибовляються при обновлении информации
+            System.out.println();
             if (AnalizeProcessor.doBolinjera(svecha)) {
                 //todo добавить проверку что позиции в sell еще нету - что бы повторно не купить если стоп не дошел грамм - а патрн как повторился - проверить есть ли возможность у патерна повторяься.
                 Order orderRunTime = zahodVShellPoziciyu(symbol, svecha); //todo выставили рантайм ордер
@@ -146,62 +147,56 @@ public class Processor {
                 orderDTO.setTip("RUNTIME");
             } else if (stopLossOrder != null && stopLossOrder.getOrderId() == orderId) {
                 orderDTO.setTip("STOPLOSS");
-            }else {
+            } else {
                 orderDTO.setTip("LEVUYTIP");
             }
 
 
             //todo провверить что везде ложаться при создний в ордер менеджере
             if (orderDTO.getTip().equals("TAKEPROFIT")) { //todo бывает только в верхней половине
-                double cenaSrabotavshegoTP =  GURU.getTakeProfitOrders().get(symbol).getCenaVhoda();
+                double cenaSrabotavshegoTP = GURU.getTakeProfitOrders().get(symbol).getCenaVhoda();
                 GURU.getTakeProfitOrders().remove(symbol); //todo удаляем тейк профит из листа - его заменит стоплосс ниже - чуть выше сма
 
-                double vOrdereColichestvo =  GURU.getRunTimeOrders().get(symbol).colichestvoCuplennuhMonet; //todo сетим число монет в рантайме
+                double vOrdereColichestvo = GURU.getRunTimeOrders().get(symbol).colichestvoCuplennuhMonet; //todo сетим число монет в рантайме
                 GURU.getRunTimeOrders().get(symbol).colichestvoCuplennuhMonet = vOrdereColichestvo - orderDTO.originalQuantity; // перепроверить правильное ли значение приходит в тейкпрояит при егсиполнении 50% должно быть
 
 
                 double dobavka = cenaSrabotavshegoTP * (PrivateConfig.PERESTANOVKATPPROCENTDOBAVKIKSMA / 100.0); // Рассчитываем 2% от цены
                 double novayaCena = cenaSrabotavshegoTP + dobavka; // Прибавляем 2% к начальной цене
 
-               GURUTEST.orderaNaServer.add(GURU.orderManager.creatMARKETOrderStopLoss(symbol,vOrdereColichestvo,novayaCena)); //todo создаем новый стоп за место тейка тоже на 50%
-                GURU.orderManager.cancelOrder(symbol,GURU.getStopLossOrders().get(symbol).getOrderId());//todo удаляем старый стоп имет ли смыслы строка сверху или снизу этой ??
+                GURUTEST.orderaNaServer.add(GURU.orderManager.creatMARKETOrderStopLoss(symbol, vOrdereColichestvo, novayaCena)); //todo создаем новый стоп за место тейка тоже на 50%
+                GURU.orderManager.cancelOrder(symbol, GURU.getStopLossOrders().get(symbol).getOrderId());//todo удаляем старый стоп имет ли смыслы строка сверху или снизу этой ??
 
                 //todo при создании нового ордера стоп старый в ГУРУ сам долджен затерется.
-
-
-
 
 
             } else if (orderDTO.getTip().equals("RUNTIME")) { //todo просматриваем и кенселим все стопы и тейки
                 GURU.getRunTimeOrders().remove(symbol);
 
-                    if(GURU.getStopLossOrders().containsKey(symbol)){ //
-                        Order tecuhiySTOrder = GURU.getStopLossOrders().get(symbol);//
-                        GURU.orderManager.cancelOrder(symbol,tecuhiySTOrder.getOrderId());//todo отменяем текущий СТОП ордер
+                if (GURU.getStopLossOrders().containsKey(symbol)) { //
+                    Order tecuhiySTOrder = GURU.getStopLossOrders().get(symbol);//
+                    GURU.orderManager.cancelOrder(symbol, tecuhiySTOrder.getOrderId());//todo отменяем текущий СТОП ордер
 
-                        GURU.getStopLossOrders().remove(symbol);
-                        }
-                    if (GURU.getTakeProfitOrders().containsKey(symbol)){
-                        Order tecuhiyTPOrder = GURU.getTakeProfitOrders().get(symbol);
-                        GURU.orderManager.cancelOrder(symbol,tecuhiyTPOrder.getOrderId()); //todo отменяем текущий ПРОФИТ ордер
+                    GURU.getStopLossOrders().remove(symbol);
+                }
+                if (GURU.getTakeProfitOrders().containsKey(symbol)) {
+                    Order tecuhiyTPOrder = GURU.getTakeProfitOrders().get(symbol);
+                    GURU.orderManager.cancelOrder(symbol, tecuhiyTPOrder.getOrderId()); //todo отменяем текущий ПРОФИТ ордер
 
-                        GURU.getTakeProfitOrders().remove(symbol);
-                        }
-
-
+                    GURU.getTakeProfitOrders().remove(symbol);
+                }
 
 
             } else if (orderDTO.getTip().equals("STOPLOSS")) { //todo  - рантайм будет сам леквидирован независимо от половины низ или вверх               // todo в будещем поставить просто елсе
                 GURU.getStopLossOrders().remove(symbol);
 
-                if(GURU.getTakeProfitOrders().containsKey(symbol)){
+                if (GURU.getTakeProfitOrders().containsKey(symbol)) {
 
-                   long idTekushegoTPOrdera = GURU.getTakeProfitOrders().get(symbol).getOrderId();
-                   GURU.orderManager.cancelOrder(symbol,idTekushegoTPOrdera);
-                   GURU.getTakeProfitOrders().remove(symbol);
+                    long idTekushegoTPOrdera = GURU.getTakeProfitOrders().get(symbol).getOrderId();
+                    GURU.orderManager.cancelOrder(symbol, idTekushegoTPOrdera);
+                    GURU.getTakeProfitOrders().remove(symbol);
 
                 }
-
 
 
             }
@@ -356,8 +351,6 @@ public class Processor {
     }
 
 
-
-
     private static void handleOtherEvents(JSONObject jsonEvent) {
         System.out.println("Внутри handleOtherEvents");
         System.out.println(jsonEvent.toString(2));
@@ -392,12 +385,75 @@ public class Processor {
 
     public Order zahodVShellPoziciyu(String symbol, Svecha svecha) {
 //        return OrderManager.marketMarginOrderShell(simbol, svecha.getClose(), PrivateConfig.NA_ODIN_ORDER_V_USDT);
+
+
+//        System.out.println( GURUTEST.realBalaceClienta);
+//        System.out.println(GURUTEST.takeProfitOrdersRClientom.size() + " "+ GURUTEST.stopLossOrdersRClientom.size()+ " "+ GURUTEST.runTimeOrdersRClientom.size());
+
+
+//        if(svecha.getOpenTime() == 1690087500000L){
+//            System.out.println();
+//        }
+
         double quantity = (PrivateConfig.NA_ODIN_ORDER_V_USDT / svecha.getClose());
-        double ocruglenuyQuantitySuchetomMonety = GURU.ocruglitel(quantity, GURU.getMapPosleZapytoy().get(symbol).cifrPosleZapytoyDlyaLotaVoVTOROYMONETE);
-        Order order = GURU.orderManager.createMarketOrder(symbol, "SELL", ocruglenuyQuantitySuchetomMonety,false);
+
+        double ocruglenuyQuantitySuchetomMonety = 0;
+
+        ocruglenuyQuantitySuchetomMonety = GURU.ocruglitel(quantity, GURU.getMapPosleZapytoy().get(symbol).cifrPosleZapytoyDlyaLotaVoVTOROYMONETE);
+
+
+        Order order = GURU.orderManager.createMarketOrder(symbol, "SELL", ocruglenuyQuantitySuchetomMonety, false);
         order.setCenaVhoda(svecha.getClose());
         return order;
     }
+
+
+    public Order zahodVShellPoziciyuPOVTORNO(String symbol, Svecha svecha) {
+//        return OrderManager.marketMarginOrderShell(simbol, svecha.getClose(), PrivateConfig.NA_ODIN_ORDER_V_USDT);
+
+
+//        System.out.println( GURUTEST.realBalaceClienta);
+//        System.out.println(GURUTEST.takeProfitOrdersRClientom.size() + " "+ GURUTEST.stopLossOrdersRClientom.size()+ " "+ GURUTEST.runTimeOrdersRClientom.size());
+
+//
+//        if(svecha.getOpenTime() == 1690087500000L){
+//            System.out.println();
+//        }
+
+        double quantity = (PrivateConfig.NA_ODIN_ORDER_V_USDT / svecha.getClose());
+
+        double ocruglenuyQuantitySuchetomMonety = 0;
+
+        ocruglenuyQuantitySuchetomMonety = GURU.ocruglitel(quantity, GURU.getMapPosleZapytoy().get(symbol).cifrPosleZapytoyDlyaLotaVoVTOROYMONETE);
+
+
+        Order order = GURU.orderManager.createMarketOrder(symbol, "SELL", ocruglenuyQuantitySuchetomMonety, false);
+        order.setCenaVhoda(svecha.getClose());
+        return order;
+    }
+
+
+//    public Order zahodVShellPoziciyu(String symbol, Svecha svecha) {
+//        try {
+//            double quantity = (PrivateConfig.NA_ODIN_ORDER_V_USDT / svecha.getClose());
+//            Map<String, SomeType> map = GURU.getMapPosleZapytoy(); // Предполагаем, что SomeType - тип вашего значения в карте
+//            SomeType value = map.get(symbol);
+//
+//            if (value == null) {
+//                throw new IllegalArgumentException("Значение для символа '" + symbol + "' не найдено в карте");
+//            }
+//
+//            double ocruglenuyQuantitySuchetomMonety = GURU.ocruglitel(quantity, value.cifrPosleZapytoyDlyaLotaVoVTOROYMONETE);
+//            Order order = GURU.orderManager.createMarketOrder(symbol, "SELL", ocruglenuyQuantitySuchetomMonety, false);
+//            order.setCenaVhoda(svecha.getClose());
+//            return order;
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            // Здесь можно добавить дополнительную логику обработки ошибки
+//            // Например, возвращение null или специфического объекта Order
+//            return null; // Или другая логика обработки
+//        }
+//    }
 
 
     public List<Svecha> addSvecha(String symbol, Svecha svecha) {
@@ -429,20 +485,16 @@ public class Processor {
     }
 
 
-
-    public void TestmetodPriemkaCvechi(Svecha svecha){
+    public void TestmetodPriemkaCvechi(Svecha svecha) {
         System.out.println(svecha.getOpenTime());
-
+        System.out.println(GURUTEST.realBalaceClienta);
 
         GURUTEST.orderaNaServer = new ArrayList<>();
 
 
-
-
-
-
-
         String symbol = svecha.money;
+
+        ustanovkaCvetaSvechi(svecha);
 
         // метод добавления свечи
         List<Svecha> tekushuyList = addSvecha(symbol, svecha);
@@ -451,13 +503,20 @@ public class Processor {
         addLineBolinjer(tekushuyList); // todo тут можно чистить листы - ДОБАВИТЬ
         //Текущая свеча - полна - вместе с боленджарами
 
-        if (GURU.getRunTimeOrders().containsKey(symbol)) {
+
+        if (symbol.equals("1000PEPEUSDT")) {
+            if (svecha.getOpenTime() == 1683941400000L) {
+                System.out.println(GURUTEST.realBalaceClienta);
+            }
+        }
+
+        if (GURUTEST.runTimeOrdersRClientom.containsKey(symbol)) { //todo обеденить с низом через иф елсе
             boolean neMolot = ProcessorUsloviiVihoda.proverkaNaMolotRV(svecha);
             boolean neTopchimsyaNaMeste = ProcessorUsloviiVihoda.neTopchimsyaNamesteVerhnayPolovina(symbol, tekushuyList, PrivateConfig.USLOVIEVIHODACOLSVECHEYINAMESTE, PrivateConfig.USLOVIYAVIHODAPROCENTSCITAEMUYNAMESTE);
             boolean neNeskolkoPodryadZelenuh = ProcessorUsloviiVihoda.neskolkoPodryadZelenuh(tekushuyList, symbol, PrivateConfig.USLOVIYAVIHODAPODRYDZELENYH); //
             if (neMolot && neTopchimsyaNaMeste && neNeskolkoPodryadZelenuh) { // todo перерорверить условия
-                double procentDoTP = ProcessorUsloviiVihoda.procentDoTP(svecha, symbol);
-                if (procentDoTP > PrivateConfig.TPMINIMUMCHOBEGONETROGAT) { //если больше в процентах - не близко к ТП то подтягиваем ТП
+                double procentDoTPotSMA = ProcessorUsloviiVihoda.procentDoTPotSMA(svecha, symbol); //todo tесли мы ужеблизко то СМА не должно сильно скакать соотвественно перестановки не будет
+                if (procentDoTPotSMA > PrivateConfig.TPMINIMUMCHOBEGONETROGAT) { //если больше в процентах - не близко к ТП то подтягиваем ТП
                     ProcessorPerestonovkiSLiTP.perestanovkaTkeProfita(symbol, svecha);
                 }
             } else {
@@ -467,33 +526,59 @@ public class Processor {
             }
         }
 
+        if (!GURUTEST.runTimeOrdersRClientom.containsKey(symbol)) {//todo роверяем условия и ВХОДИМ толко если НЕТУ текущего рантайм ордера
+            if (AnalizeProcessor.verhnuyiHvostChtonado(svecha)) { // todo везде проверить финасы - что убавлються - потом проверить что прибовляються при обновлении информации
+                if (AnalizeProcessor.doBolinjera(svecha)) {
+                    //todo добавить проверку что позиции в sell еще нету - что бы повторно не купить если стоп не дошел грамм - а патрн как повторился - проверить есть ли возможность у патерна повторяься.
+                    Order orderRunTime = zahodVShellPoziciyu(symbol, svecha); //todo выставили рантайм ордер
+                    GURUTEST.orderaNaServer.add(orderRunTime);
+                    VistavlyatelStopITakeProffit.createForLineTakeAndStopAndADDSet(orderRunTime, svecha); //todo  ОСО и стоп
 
-        if (AnalizeProcessor.verhnuyiHvostChtonado(svecha)) { // todo везде проверить финасы - что убавлються - потом проверить что прибовляються при обновлении информации
-            if (AnalizeProcessor.doBolinjera(svecha)) {
-                //todo добавить проверку что позиции в sell еще нету - что бы повторно не купить если стоп не дошел грамм - а патрн как повторился - проверить есть ли возможность у патерна повторяься.
-                Order orderRunTime = zahodVShellPoziciyu(symbol, svecha); //todo выставили рантайм ордер
-                GURUTEST.orderaNaServer.add(orderRunTime);
-                VistavlyatelStopITakeProffit.createForLineTakeAndStopAndADDSet(orderRunTime, svecha); //todo  ОСО и стоп
+                }
+            } else {
+                if (GURUTEST.dogonOrder.containsKey(symbol)) {
+                    Order oderZakrytyiStopom = GURUTEST.dogonOrder.get(symbol);
 
+                    double doBolinjeraVProcemtah = ((svecha.getClose() - svecha.getSma()) / svecha.getSma()) * 100;
+
+                    if (oderZakrytyiStopom.getCenaVhoda() > svecha.getClose() && doBolinjeraVProcemtah >= PrivateConfig.PRIEMLEMUYPROCENTDOBOLINJERA) {
+
+                        Order povtornyiOrder = zahodVShellPoziciyuPOVTORNO(symbol, svecha); //todo ВХОДИМ ПВТОРНО
+                        GURUTEST.orderaNaServer.add(povtornyiOrder);
+                        VistavlyatelStopITakeProffit.createForLineTakeAndStopAndADDSetPOVTORNO(povtornyiOrder, svecha);
+
+
+                        GURUTEST.dogonOrder.remove(symbol);
+                    }
+                }
             }
+
+
+
+
+            if (svecha.getSma() > svecha.getClose()) { // зеленый свет на повторный заход при пекресечении сма
+                if (!GURU.sybloyRazreshenyPovrtoryZahoda.contains(symbol)) {
+                    GURU.sybloyRazreshenyPovrtoryZahoda.add(symbol);// зеленый свет на повторный заход при пекресечении сма
+                }
+            }
+
+
         }
-
-
-
-
-
-
-
-
-
-
 
 
         testMetodOtpravkaOrderovNaSerber(GURUTEST.orderaNaServer);
     }
 
-    public void testMetodOtpravkaOrderovNaSerber(List<Order> orderaNaServer){
+    public void testMetodOtpravkaOrderovNaSerber(List<Order> orderaNaServer) {
         GURUTEST.processorBirghiTEST.priemkaObrabotkaOrderov(orderaNaServer);
+//        GURU.getTakeProfitOrders()
+//        GURU.getStopLossOrders()
+    }
+
+
+    public void ustanovkaCvetaSvechi(Svecha svecha) {
+        svecha.setColor(svecha.getOpen() < svecha.getClose() ? Color.GREEN : Color.RED);
+
     }
 
 }

@@ -11,7 +11,7 @@ public class ProcessorZakruvator { //todo проверить все методы
 //        if (GURU.getRunTimeOrders().containsKey(symbol)) {
         if (GURUTEST.runTimeOrdersRClientom.containsKey(symbol)) {
 
-            double skolichestvoMonet = GURU.getRunTimeOrders().get(symbol).getCummulativeQuoteQty(); //todo поменял на возврат колечества кплоеннх провалиться посомтреть повниательнее
+            double skolichestvoMonet = GURUTEST.runTimeOrdersRClientom.get(symbol).getCummulativeQuoteQty(); //todo поменял на возврат колечества кплоеннх провалиться посомтреть повниательнее
 
            GURUTEST.orderaNaServer.add( GURU.orderManager.createMarketOrder(symbol,"BUY",skolichestvoMonet,true));
 
@@ -35,7 +35,7 @@ public class ProcessorZakruvator { //todo проверить все методы
             GURU.orderManager.cancelOrder(symbol,id);
 //            GURU.getStopLossOrders().remove(symbol);
 
-//            GURUTEST.stopLossOrdersRClientom.remove(symbol);
+            GURUTEST.stopLossOrdersRClientom.remove(symbol);
 
         }
 
